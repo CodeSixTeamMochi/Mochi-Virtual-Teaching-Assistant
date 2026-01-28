@@ -1,0 +1,218 @@
+import { useState, useCallback } from 'react';
+import { ArrowLeft } from 'lucide-react';
+import {
+  MochiGreeting,
+  VisualSearchBar,
+  SearchResultsPanel,
+  GenerateWithMochiPanel
+} from '@/components/mochi';
+import {
+  mockSearchResults,
+  mockGenerateContent,
+  type VisualResult,
+  type GeneratedContent
+} from '@/services/visualSearchService';
+
+/**
+ * Mochi Virtual Teaching Assistant - Main Interface
+ * 
+ * A production-ready React frontend for preschool classroom use.
+ * Features real-time visual search and AI content generation.
+ * 
+ * FUTURE INTEGRATION POINTS:
+ * - Replace mockSearchResults with Gemini API search
+ * - Replace mockGenerateContent with Gemini Vision/Image generation
+ * - Add WebSocket for real-time streaming
+ * - Integrate speech-to-text for voice commands
+ */
+const VisualSearch = () => {
+  // State management
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<VisualResult[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [hasSearched, setHasSearched] = useState(false);
+  
+  const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  
+  const [selectedResult, setSelectedResult] = useState<VisualResult | null>(null);
+  const [showResults, setShowResults] = useState(false);
+
+  /**
+   * Handle search action
+   * Searches for visual content based on teacher's query
+   */
+  const handleSearch = useCallback(async (query: string) => {
+    setSearchQuery(query);
+    setIsSearching(true);
+    setHasSearched(true);
+    setShowResults(true);
+
+    try {
+      const results = await mockSearchResults(query);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
+  /**
+   * Handle AI generation action
+   * Generates visual content using AI (mock for now)
+   */
+  const handleGenerateWithAI = useCallback(async (query: string) => {
+    setSearchQuery(query);
+    setIsGenerating(true);
+    setShowResults(true);
+
+    try {
+      const content = await mockGenerateContent(query);
+      setGeneratedContent(content);
+    } catch (error) {
+      console.error('Generation error:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  }, []);
+
+  /**
+   * Handle generate button click in the panel
+   */
+  const handlePanelGenerate = useCallback(async () => {
+    if (searchQuery.trim()) {
+      await handleGenerateWithAI(searchQuery);
+    }
+  }, [searchQuery, handleGenerateWithAI]);
+
+  /**
+   * Handle result card click
+   * Sets selected result for preview
+   */
+  const handleResultClick = useCallback((result: VisualResult) => {
+    setSelectedResult(result);
+    // Could show in the generate panel or open a modal
+    console.log('Selected result:', result);
+  }, []);
+
+  /**
+   * Handle back navigation
+   */
+  const handleBack = useCallback(() => {
+    setShowResults(false);
+    setHasSearched(false);
+    setSearchResults([]);
+    setSearchQuery('');
+    setGeneratedContent(null);
+  }, []);
+
+  // Home view with greeting
+  if (!showResults) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col">
+        {/* Back button placeholder for consistent layout */}
+        <div className="p-4">
+          <div className="w-10 h-10" />
+        </div>
+
+        {/* Centered content */}
+        <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20">
+          <MochiGreeting greeting="Hello! Good Morning" />
+          
+          <div className="mt-8 w-full max-w-2xl">
+            <VisualSearchBar
+              onSearch={handleSearch}
+              onGenerateWithAI={handleGenerateWithAI}
+              isLoading={isSearching || isGenerating}
+              placeholder="Search from google"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Results view with two-column layout
+  return (
+    <div className="min-h-screen bg-background flex flex-col">
+      {/* Header with back button */}
+      <div className="p-4 border-b border-border/50">
+        <button
+          onClick={handleBack}
+          className="p-2 rounded-full hover:bg-muted transition-colors"
+          aria-label="Go back"
+        >
+          <ArrowLeft className="w-5 h-5 text-foreground" />
+        </button>
+      </div>
+
+      {/* Main content - two column layout */}
+      <div className="flex-1 flex flex-col lg:flex-row">
+        {/* Left column - Search and Results */}
+        <div className="flex-1 flex flex-col p-4 lg:p-6">
+          {/* Search section header */}
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-foreground mb-3">Results</h2>
+            
+            {/* Compact search bar */}
+            <div className="mochi-card p-2 flex items-center gap-2 max-w-2xl">
+              <div className="flex-1 relative flex items-center">
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
+                  placeholder="Show me an apple"
+                  disabled={isSearching}
+                  className="w-full px-4 py-2.5 bg-muted/50 rounded-full text-foreground 
+                           placeholder:text-muted-foreground focus:outline-none focus:ring-2 
+                           focus:ring-primary/30 transition-all disabled:opacity-50 text-sm"
+                />
+              </div>
+              
+              <button
+                onClick={() => handleSearch(searchQuery)}
+                disabled={!searchQuery.trim() || isSearching}
+                className="px-4 py-2 text-sm bg-muted/80 rounded-lg font-medium
+                         hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                Search
+              </button>
+              
+              <button
+                onClick={() => handleGenerateWithAI(searchQuery)}
+                disabled={!searchQuery.trim() || isGenerating}
+                className="px-4 py-2 text-sm bg-muted/80 rounded-lg font-medium
+                         hover:bg-muted transition-colors disabled:opacity-50"
+              >
+                Generate with AI
+              </button>
+            </div>
+          </div>
+
+          {/* Results panel */}
+          <SearchResultsPanel
+            results={searchResults}
+            isLoading={isSearching}
+            hasSearched={hasSearched}
+            onResultClick={handleResultClick}
+          />
+        </div>
+
+        {/* Right column - Generate with Mochi */}
+        <div className="lg:border-l border-border/50 p-4 lg:p-6">
+          <GenerateWithMochiPanel
+            generatedContent={generatedContent}
+            isGenerating={isGenerating}
+            currentQuery={searchQuery}
+            onGenerate={handlePanelGenerate}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default VisualSearch;
