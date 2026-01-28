@@ -9,6 +9,15 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 
+import TeacherDashboard from "./pages/TeacherDashboard";
+import LessonsPage from "./pages/LessonsPage";
+import ActivitiesPage from "./pages/ActivitiesPage";
+import SpeechReportsPage from "./pages/SpeechReportsPage";
+import HealthDataPage from "./pages/HealthDataPage";
+import RemindersPage from "./pages/RemindersPage";
+import CalendarPage from "./pages/CalendarPage";
+
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -21,7 +30,18 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/home" element={<Home />} />
+
           <Route path="/forgot-password" element={<ForgotPassword />} />
+
+          <Route path="/TeacherDashboard" element={<TeacherDashboard />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/lessons" element={<LessonsPage />} />
+          <Route path="/activities" element={<ActivitiesPage />} />
+          <Route path="/speech-reports" element={<SpeechReportsPage />} />
+          <Route path="/health-data" element={<HealthDataPage />} />
+          <Route path="/reminders" element={<RemindersPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

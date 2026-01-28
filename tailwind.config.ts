@@ -50,6 +50,23 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
+        mochi: "hsl(var(--card-mochi))",
+        "stats-green": "hsl(var(--card-stats-green))",
+        "stats-yellow": "hsl(var(--card-stats-yellow))",
+
         login: {
           bg: "hsl(var(--login-bg))",
           card: "hsl(var(--login-card))",
