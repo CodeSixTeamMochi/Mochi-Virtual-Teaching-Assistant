@@ -111,17 +111,21 @@ const VisualSearch = () => {
   // Home view with greeting
   if (!showResults) {
     return (
-      <div className="min-h-screen bg-background flex flex-col">
-        {/* Back button placeholder for consistent layout */}
-        <div className="p-4">
-          <div className="w-10 h-10" />
+      <div className="min-h-screen bg-sky-50 flex flex-col relative">
+        <div className="absolute top-6 left-6 z-20">
+          <button 
+            onClick={() => window.history.back()} 
+            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
         </div>
 
         {/* Centered content */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20">
           <MochiGreeting greeting="Hello! Good Morning" />
           
-          <div className="mt-8 w-full max-w-2xl">
+          <div className="mt-8 w-full max-w-3xl">
             <VisualSearchBar
               onSearch={handleSearch}
               onGenerateWithAI={handleGenerateWithAI}
@@ -148,50 +152,23 @@ const VisualSearch = () => {
         </button>
       </div>
 
-      {/* Main content - two column layout */}
       <div className="flex-1 flex flex-col lg:flex-row">
         {/* Left column - Search and Results */}
         <div className="flex-1 flex flex-col p-4 lg:p-6">
-          {/* Search section header */}
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-foreground mb-3">Results</h2>
             
-            {/* Compact search bar */}
-            <div className="mochi-card p-2 flex items-center gap-2 max-w-2xl">
-              <div className="flex-1 relative flex items-center">
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSearch(searchQuery)}
-                  placeholder="Show me an apple"
-                  disabled={isSearching}
-                  className="w-full px-4 py-2.5 bg-muted/50 rounded-full text-foreground 
-                           placeholder:text-muted-foreground focus:outline-none focus:ring-2 
-                           focus:ring-primary/30 transition-all disabled:opacity-50 text-sm"
-                />
-              </div>
-              
-              <button
-                onClick={() => handleSearch(searchQuery)}
-                disabled={!searchQuery.trim() || isSearching}
-                className="px-4 py-2 text-sm bg-muted/80 rounded-lg font-medium
-                         hover:bg-muted transition-colors disabled:opacity-50"
-              >
-                Search
-              </button>
-              
-              <button
-                onClick={() => handleGenerateWithAI(searchQuery)}
-                disabled={!searchQuery.trim() || isGenerating}
-                className="px-4 py-2 text-sm bg-muted/80 rounded-lg font-medium
-                         hover:bg-muted transition-colors disabled:opacity-50"
-              >
-                Generate with AI
-              </button>
+            <div className="max-w-3xl">
+              <VisualSearchBar
+                onSearch={handleSearch}
+                onGenerateWithAI={handleGenerateWithAI}
+                showButtons={true}
+                initialValue={searchQuery}
+                isLoading={isSearching || isGenerating}
+                placeholder="Show me an apple..."
+              />
             </div>
           </div>
-
           {/* Results panel */}
           <SearchResultsPanel
             results={searchResults}

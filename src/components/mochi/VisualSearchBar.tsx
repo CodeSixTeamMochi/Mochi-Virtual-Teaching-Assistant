@@ -29,56 +29,66 @@ declare global {
   } 
 }
 
-
 interface VisualSearchBarProps {
   onSearch: (query: string) => void;
-  onGenerateWithAI: (query: string) => void;
+  onGenerateWithAI?: (query: string) => void; 
   isLoading?: boolean;
   placeholder?: string;
+  showButtons?: boolean; 
+  initialValue?: string; 
 }
 
 const VisualSearchBar = ({
   onSearch,
   onGenerateWithAI,
   isLoading = false,
-  placeholder = "Search for an image, or ask Mochi to generate..."
+  placeholder = "Search for an image...",
+  showButtons = false,
+  initialValue = ""
 }: VisualSearchBarProps) => {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState(initialValue);
   const [isListening, setIsListening] = useState(false);
   
-  /** * useRef is used here because the SpeechRecognition instance 
-   * needs to persist for the lifetime of the component without 
-   * causing unnecessary re-renders.
-   */
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
+
+  useEffect(() => {
+    setQuery(initialValue);
+  }, [initialValue]);
 
   /**
    * INITIALIZATION EFFECT
-   * This runs once when the component mounts to set up the "Ear" 
-   * (Speech Recognition) of the app.
+   * Sets up the "Ear" (Voice Recognition) and "Mochi" Wake Word logic.
    */
   useEffect(() => {
     // Supports both Chrome (webkit) and standard Speech APIs
     const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
+
     if (SpeechRecognitionAPI) {
       recognitionRef.current = new SpeechRecognitionAPI();
-      recognitionRef.current.continuous = false; // Stops listening after the user pauses
-      recognitionRef.current.interimResults = true; // Provides text while the user is still speaking
+      recognitionRef.current.continuous = false; 
+      recognitionRef.current.interimResults = true; 
 
       recognitionRef.current.onresult = (event) => {
-        // Converts the speech results array into a single readable string
         const transcript = Array.from(event.results)
           .map(result => result[0].transcript)
           .join('');
         setQuery(transcript);
+
+        // --- NEW MOCHI WAKE WORD LOGIC ---
+        const lowerTranscript = transcript.toLowerCase();
+        if (lowerTranscript.includes("mochi search for")) {
+          const autoQuery = lowerTranscript.split("mochi search for")[1]?.trim();
+          if (autoQuery) {
+            onSearch(autoQuery); // Automatically triggers the search
+            recognitionRef.current?.stop();
+          }
+        }
       };
 
-      // Reset UI state when the microphone naturally stops
       recognitionRef.current.onend = () => setIsListening(false);
       recognitionRef.current.onerror = () => setIsListening(false);
     }
-  }, []);
+  }, [onSearch]); // Dependency ensures voice uses the latest search function
 
   /**
    * VOICE TOGGLE LOGIC
@@ -94,73 +104,68 @@ const VisualSearchBar = ({
       recognitionRef.current.start();
       setIsListening(true);
     }
-  };
+  }
 
+  /**
+   * FORM SUBMISSION
+   * Now connected to the new API search logic via onSearch prop.
+   */
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault(); // Prevents the page from refreshing on 'Enter' key
-    if (query.trim() && !isLoading) onSearch(query.trim());
+    e.preventDefault(); 
+    if (query.trim() && !isLoading) {
+      onSearch(query.trim()); // Calls the hook's search function
+    }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="w-full max-w-3xl mx-auto animate-fade-in" >
-      {/* GLASS-MORPHISM DESIGN: 
-          Using bg-card and primary/10 border creates a high-end AI feel.
-      */}
-      <div className="bg-card border-2 border-primary/10 p-2 rounded-2xl flex items-center gap-2 shadow-xl 
-                      focus-within:border-primary/30 transition-all">
+    <form onSubmit={handleSubmit} className="w-full max-w-4xl mx-auto mt-2 animate-fade-in">
+      <div className="bg-card border-2 border-primary/10 p-2 rounded-2xl flex items-center gap-2 shadow-xl focus-within:border-primary/30 transition-all">
         
-        {/* INPUT CONTAINER */}
+        {/* INPUT AREA */}
         <div className="flex-1 relative flex items-center">
-          <Search className="absolute left-4 w-5 h-9 text-muted-foreground" />
+          <Search className="absolute left-4 w-5 h-5 text-muted-foreground" />
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={placeholder}
             disabled={isLoading}
-            className="w-full pl-12 pr-12 py-3.5 bg-muted/50 rounded-full text-foreground focus:outline-none focus:ring-2 
-                      focus:ring-primary/20 transition-all shadow-inner"/>
+            className="w-full pl-12 pr-12 py-3.5 bg-muted/50 rounded-full text-foreground focus:outline-none transition-all shadow-inner"
+          />
           
-          {/* DYNAMIC MIC BUTTON:
-              If 'isListening' is true, the button turns red and pulses. 
-              This is vital "Affordance" in UI design—it tells the user the mic is active.
-          */}
+          {/* MIC BUTTON */}
           <button
             type="button"
             onClick={toggleListening}
             className={`absolute right-3 p-2 rounded-full transition-all ${
-              isListening 
-                ? "bg-red-100 text-red-600 animate-pulse" 
-                : "text-muted-foreground hover:bg-primary/10"
+              isListening ? "bg-red-100 text-red-600 animate-pulse" : "text-muted-foreground hover:bg-primary/10"
             }`}
           >
             {isListening ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
           </button>
         </div>
 
-        {/* PRIMARY ACTION: SEARCH Standard search for finding existing results.*/}
-        <button
-          type="submit"
-          disabled={!query.trim() || isLoading}
-          className="bg-orange-400 text-white px-6 py-2.5 rounded-full font-medium hover:bg-orange-500 shadow-md active:scale-95 disabled:opacity-50 transition-all"
-        >
-          Search
-        </button>
+        {/* ACTION BUTTONS */}
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={!query.trim() || isLoading}
+            className="bg-orange-400 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-orange-500 shadow-md active:scale-95 disabled:opacity-50 transition-all text-sm whitespace-nowrap"
+          >
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Search"}
+          </button>
 
-        {/* PRIMARY ACTION: GENERATE
-            The 'Sparkles' icon and hover:scale-105 differentiate this 
-            from standard search, signaling "Magic" or AI generation.
-        
-        <button
-          type="button"
-          onClick={() => onGenerateWithAI(query)}
-          disabled={!query.trim() || isLoading}
-          className="bg-primary text-primary-foreground px-6 py-2.5 rounded-full font-medium flex items-center gap-2 hover:shadow-lg hover:scale-105 transition-all disabled:opacity-50 active:scale-95"
-        >
-          <Sparkles className="w-4 h-4" />
-          Generate
-        </button>
-        */}
+          {showButtons && onGenerateWithAI && (
+            <button
+              type="button"
+              onClick={() => onGenerateWithAI(query)} 
+              className="bg-blue-500 text-white px-6 py-2.5 rounded-xl font-bold flex items-center gap-2 hover:bg-blue-600 transition-all"
+            >
+              <Sparkles className="w-4 h-4" />
+              Generate with AI
+            </button>
+          )}
+        </div>
       </div>
     </form>
   );
