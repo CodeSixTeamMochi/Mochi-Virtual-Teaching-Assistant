@@ -38,7 +38,7 @@ const Home = () => {
         navigate("/");
         break;
       case "revision-games":
-        navigate("/");
+        navigate("/LessonPlaneHome");
         break;
       case "pronunciation":
         navigate("/");

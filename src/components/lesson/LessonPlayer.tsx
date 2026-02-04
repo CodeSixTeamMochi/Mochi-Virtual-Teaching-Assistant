@@ -7,7 +7,7 @@ import { getLessonById } from '@/services/storageService';
 import { speak, stop, preloadVoices } from '@/services/ttsService';
 import { Lesson } from '@/types/lesson';
 import { toast } from '@/hooks/use-toast';
-import mochiCharacter from '@/assets/mochi-character.png';
+import mochiCharacter from '@/assets/mochi-avatar.jpeg';
 
 const LessonPlayer = () => {
   const navigate = useNavigate();
@@ -27,7 +27,7 @@ const LessonPlayer = () => {
           description: 'Lesson not found',
           variant: 'destructive',
         });
-        navigate('/');
+        navigate('/LessonPlaneHome');
       }
     }
     
@@ -85,13 +85,13 @@ const LessonPlayer = () => {
         title: '🎉 Lesson Complete!',
         description: 'Great job finishing this lesson!',
       });
-      navigate('/');
+      navigate('/LessonPlaneHome');
     }
   };
 
   const handleExit = () => {
     stop();
-    navigate('/');
+    navigate('/LessonPlaneHome');
   };
 
   return (

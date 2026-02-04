@@ -103,7 +103,7 @@ const LessonEditor = ({ lessonId }: LessonEditorProps) => {
       });
     }
 
-    navigate('/');
+    navigate('/LessonPlaneHome');
   };
 
   return (
@@ -114,7 +114,7 @@ const LessonEditor = ({ lessonId }: LessonEditorProps) => {
           <Button
             variant="ghost"
             size="icon"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/LessonPlaneHome')}
           >
             <ArrowLeft className="h-5 w-5" />
           </Button>
