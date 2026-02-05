@@ -171,11 +171,111 @@
 // */
 
 
+// import { createLesson } from './storageService';
+// import { Lesson, LessonFormData } from '@/types/lesson';
+
+// const GEMINI_API_KEY = import.meta.env.VITE_API_KEY;
+
+
+// export interface AIGenerationRequest {
+//   topic: string;
+//   itemCount?: number;
+//   language?: string;
+// }
+
+// export interface AIGenerationResult {
+//   success: boolean;
+//   lesson?: Lesson;
+//   error?: string;
+// }
+
+// export const generateLessonWithAI = async (
+//   request: AIGenerationRequest
+// ): Promise<AIGenerationResult> => {
+//   const { topic, itemCount = 5 } = request;
+
+//   const prompt = `Generate an educational lesson about "${topic}" for children aged 4-8.
+  
+// Return a valid JSON object with this exact structure:
+// {
+//   "title": "lesson title",
+//   "description": "brief description of what children will learn",
+//   "items": [
+//     { "name": "item name", "spokenText": "educational text about this item, 1-2 sentences" }
+//   ]
+// }
+
+// Generate exactly ${itemCount} items. Keep the language simple and engaging for young children.
+// Only return the JSON, no other text.`;
+
+//   try {
+//     const response = await fetch(
+//       'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
+// ,
+//       {
+//         method: 'POST',
+//         headers: {
+//           'Content-Type': 'application/json',
+//           'x-goog-api-key': GEMINI_API_KEY,
+//         },
+//         body: JSON.stringify({
+//           contents: [{ parts: [{ text: prompt }] }],
+//           generationConfig: {
+//             temperature: 0.7,
+//             maxOutputTokens: 1024,
+//           },
+//         }),
+//       }
+//     );
+
+//     if (!response.ok) {
+//       throw new Error(`Gemini API error: ${response.status}`);
+//     }
+
+//     const data = await response.json();
+//     const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+//     if (!text) {
+//       throw new Error('No content in Gemini response');
+//     }
+
+//     // Parse JSON from response
+//     const jsonMatch = text.match(/\{[\s\S]*\}/);
+//     if (!jsonMatch) {
+//       throw new Error('Could not parse JSON from response');
+//     }
+
+//     const parsed = JSON.parse(jsonMatch[0]);
+
+//     const formData: LessonFormData = {
+//       title: parsed.title || `Learn About ${topic}`,
+//       description: parsed.description || `An AI-generated lesson about ${topic}.`,
+//       coverImage: '',
+//       items: parsed.items.map((item: any) => ({
+//         name: item.name,
+//         spokenText: item.spokenText,
+//         image: '',
+//       })),
+//     };
+
+//     const lesson = createLesson(formData);
+
+//     return { success: true, lesson };
+//   } catch (error) {
+//     return {
+//       success: false,
+//       error: error instanceof Error ? error.message : 'Failed to generate lesson',
+//     };
+//   }
+// };
+
+
+// src/services/aiLessonService.ts
 import { createLesson } from './storageService';
 import { Lesson, LessonFormData } from '@/types/lesson';
-//const GEMINI_API_KEY = process.env.REACT_APP_API_KEY;
-const GEMINI_API_KEY = import.meta.env.VITE_API_KEY;
-//const GEMINI_API_KEY = 'AIzaSyA1_ovHrdA-lf_VXwpt_Lym3IwtUuZHhto'; // Replace with your actual API key
+
+// Point to your Flask backend
+const FLASK_API_URL = import.meta.env.VITE_FLASK_API_URL || 'http://localhost:5000';
 
 export interface AIGenerationRequest {
   topic: string;
@@ -194,72 +294,35 @@ export const generateLessonWithAI = async (
 ): Promise<AIGenerationResult> => {
   const { topic, itemCount = 5 } = request;
 
-  const prompt = `Generate an educational lesson about "${topic}" for children aged 4-8.
-  
-Return a valid JSON object with this exact structure:
-{
-  "title": "lesson title",
-  "description": "brief description of what children will learn",
-  "items": [
-    { "name": "item name", "spokenText": "educational text about this item, 1-2 sentences" }
-  ]
-}
-
-Generate exactly ${itemCount} items. Keep the language simple and engaging for young children.
-Only return the JSON, no other text.`;
-
   try {
-    const response = await fetch(
-      'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent'
-,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'x-goog-api-key': GEMINI_API_KEY,
-        },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 1024,
-          },
-        }),
-      }
-    );
+    const response = await fetch(`${FLASK_API_URL}/api/generate-lesson`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic, item_count: itemCount }),
+    });
 
     if (!response.ok) {
-      throw new Error(`Gemini API error: ${response.status}`);
+      throw new Error(`API error: ${response.status}`);
     }
 
     const data = await response.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
-    if (!text) {
-      throw new Error('No content in Gemini response');
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to generate lesson');
     }
-
-    // Parse JSON from response
-    const jsonMatch = text.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      throw new Error('Could not parse JSON from response');
-    }
-
-    const parsed = JSON.parse(jsonMatch[0]);
 
     const formData: LessonFormData = {
-      title: parsed.title || `Learn About ${topic}`,
-      description: parsed.description || `An AI-generated lesson about ${topic}.`,
-      coverImage: '',
-      items: parsed.items.map((item: any) => ({
+      title: data.title,
+      description: data.description,
+      coverImage: data.items[0]?.image || '',
+      items: data.items.map((item: any) => ({
         name: item.name,
         spokenText: item.spokenText,
-        image: '',
+        image: item.image || '',
       })),
     };
 
     const lesson = createLesson(formData);
-
     return { success: true, lesson };
   } catch (error) {
     return {
