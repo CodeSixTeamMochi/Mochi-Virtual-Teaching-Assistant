@@ -162,7 +162,7 @@
 
   .login-input:focus {
     @apply outline-none ring-2;
-    ring-color: hsl(var(--primary));
+    --tw-ring-color: hsl(var(--primary));
   }
 
   .login-button {
