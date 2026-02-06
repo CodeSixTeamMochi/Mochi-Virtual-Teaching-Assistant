@@ -170,5 +170,4 @@ const VisualSearchBar = ({
     </form>
   );
 };
-
 export default VisualSearchBar;

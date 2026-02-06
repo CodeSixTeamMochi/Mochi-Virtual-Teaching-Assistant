@@ -1,3 +1,4 @@
+import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
 /**
  * Visual Search Service
  * Mock service file for simulating backend API calls
