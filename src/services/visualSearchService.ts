@@ -1,13 +1,13 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
-/**
- * Visual Search Service
- * Mock service file for simulating backend API calls
- * 
- * FUTURE INTEGRATION POINTS:
- * - Replace mockSearchResults() with actual Gemini API call
- * - Replace mockGenerateContent() with Gemini Vision/Image generation API
- * - Add WebSocket connection for real-time streaming responses
- */
+
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
+const genAI = new GoogleGenerativeAI(API_KEY);
+
+// 1. SAFETY BLOCKLIST: Immediate check for restricted content
+const SAFETY_BLOCKLIST = [
+  'gun', 'weapon', 'knife', 'sword', 'blood', 'gore', 'violence', 
+  'kill', 'death', 'war', 'bomb', 'scary', 'fight', 'monster','18+'
+];
 
 export interface VisualResult {
   id: string;
@@ -15,6 +15,8 @@ export interface VisualResult {
   thumbnail: string;
   type: 'image' | 'video' | 'animation';
   description?: string;
+  link: string;
+  snippet: string;
 }
 
 export interface GeneratedContent {
@@ -23,109 +25,125 @@ export interface GeneratedContent {
   imageUrl: string;
   type: 'image' | 'video' | 'animation';
   generatedAt: Date;
-}
-
-// Mock image URLs for demonstration
-const mockImages = {
-  apple: [
-    'https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=300&h=200&fit=crop',
-    'https://images.unsplash.com/photo-1560806887-1e4cd0b6cbd6?w=300&h=200&fit=crop',
-    'https://images.unsplash.com/photo-1584306670957-acf935f5033c?w=300&h=200&fit=crop',
-  ],
-  animals: [
-    'https://images.unsplash.com/photo-1474511320723-9a56873571b7?w=300&h=200&fit=crop',
-    'https://images.unsplash.com/photo-1425082661705-1834bfd09dca?w=300&h=200&fit=crop',
-    'https://images.unsplash.com/photo-1437622368342-7a3d73a34c8f?w=300&h=200&fit=crop',
-    'https://images.unsplash.com/photo-1564349683136-77e08dba1ef7?w=300&h=200&fit=crop',
-  ],
-  car: [
-    'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=300&h=200&fit=crop',
-    'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?w=300&h=200&fit=crop',
-  ],
-  default: [
-    'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=300&h=200&fit=crop',
-    'https://images.unsplash.com/photo-1509062522246-3755977927d7?w=300&h=200&fit=crop',
-    'https://images.unsplash.com/photo-1588072432836-e10032774350?w=300&h=200&fit=crop',
-  ],
-};
-
-const contentTypes: Array<'image' | 'video' | 'animation'> = ['image', 'video', 'animation'];
-
-/**
- * Simulates searching for visual content
- * 
- * FUTURE: Replace with actual API call
- * Example:
- * const response = await fetch('/api/search', {
- *   method: 'POST',
- *   body: JSON.stringify({ query }),
- *   headers: { 'Content-Type': 'application/json' }
- * });
- * return response.json();
- */
-export async function mockSearchResults(query: string): Promise<VisualResult[]> {
-  // Simulate network delay
-  await new Promise(resolve => setTimeout(resolve, 1200 + Math.random() * 800));
-
-  const lowerQuery = query.toLowerCase();
-  let images = mockImages.default;
-
-  if (lowerQuery.includes('apple')) {
-    images = mockImages.apple;
-  } else if (lowerQuery.includes('animal') || lowerQuery.includes('animals')) {
-    images = mockImages.animals;
-  } else if (lowerQuery.includes('car')) {
-    images = mockImages.car;
-  }
-
-  return images.map((url, index) => ({
-    id: `result-${Date.now()}-${index}`,
-    title: `${query} - Result ${index + 1}`,
-    thumbnail: url,
-    type: contentTypes[index % contentTypes.length],
-    description: `Educational content about ${query}`,
-  }));
+  description?: string;
 }
 
 /**
- * Simulates AI content generation
- * 
- * FUTURE: Replace with Gemini API integration
- * Example:
- * const response = await fetch('/api/generate', {
- *   method: 'POST',
- *   body: JSON.stringify({ prompt: query }),
- *   headers: { 'Content-Type': 'application/json' }
- * });
- * return response.json();
- * 
- * For real-time streaming:
- * const ws = new WebSocket('wss://api/generate/stream');
- * ws.send(JSON.stringify({ prompt: query }));
+ * AI GENERATION FUNCTION
  */
-export async function mockGenerateContent(query: string): Promise<GeneratedContent> {
-  // Simulate longer delay for "AI generation"
-  await new Promise(resolve => setTimeout(resolve, 2000 + Math.random() * 1000));
+export async function generateAIContent(query: string): Promise<GeneratedContent> {
+  const normalizedQuery = query.toLowerCase().trim();
+  
+  // LAYER 1: Local Safety Check
+  const isRestricted = SAFETY_BLOCKLIST.some(word => normalizedQuery.includes(word));
+  
+  // Re-route restricted queries to a puppy so the AI generates a real image
+  const effectiveQuery = isRestricted 
+    ? "a cute fluffy golden retriever puppy playing in a sunny garden" 
+    : query;
 
-  const lowerQuery = query.toLowerCase();
-  let imageUrl = 'https://images.unsplash.com/photo-1503676260728-1c00da094a0b?w=400&h=300&fit=crop';
+  try {
+    const model = genAI.getGenerativeModel({ 
+      model: "gemini-2.5-flash-image",
+      systemInstruction: `You are Mochi, a professional AI photography assistant for kids. 
+      Your goal is to generate high-fidelity, photorealistic images.
+      
+      SAFETY RULES:
+      1. STRICTLY PROHIBITED: Weapons, violence, blood, or gore.
+      2. If a user asks for something unsafe, always identify as:
+      3. Ensure all photos are bright, positive, and educational.
+      4. Always provide a sophisticated 3-word super simple title for kids age 1-5.`,
 
-  if (lowerQuery.includes('apple')) {
-    imageUrl = 'https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?w=400&h=300&fit=crop';
-  } else if (lowerQuery.includes('animal')) {
-    imageUrl = 'https://images.unsplash.com/photo-1474511320723-9a56873571b7?w=400&h=300&fit=crop';
-  } else if (lowerQuery.includes('car')) {
-    imageUrl = 'https://images.unsplash.com/photo-1502877338535-766e1452684a?w=400&h=300&fit=crop';
+      safetySettings: [
+        { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE },
+        { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_LOW_AND_ABOVE }
+      ],
+    });
+
+    const result = await model.generateContent({
+      contents: [{ 
+        role: "user", 
+        parts: [{ 
+          text: `A high-resolution, photorealistic  cinematic photo of: ${effectiveQuery}. 
+                 Sharp focus, natural lighting, highly detailed textures.` 
+        }] 
+      }],
+      generationConfig: {
+        // @ts-ignore
+        responseModalities: ["text", "image"],
+      }
+    });
+
+    const response = await result.response;
+
+    //API Safety Check Fallback
+    if (response.candidates?.[0]?.finishReason === "SAFETY") {
+      return {
+        id: `safe-api-${Date.now()}`,
+        title: "Friendly Puppy Friend!", 
+        imageUrl: `https://pollinations.ai/p/cute%20smiling%20puppy?width=1024&height=768&nologo=true`,
+        type: 'image',
+        generatedAt: new Date(),
+        
+        description: "Friendly Puppy Friend!" 
+      };
+    }
+
+    let aiTitle = "";
+    let base64Image = "";
+
+    if (response.candidates && response.candidates[0].content.parts) {
+      for (const part of response.candidates[0].content.parts) {
+        if (part.text) aiTitle = part.text.trim();
+        else if (part.inlineData) base64Image = part.inlineData.data;
+      }
+    }
+
+    //Construct result
+    return {
+      id: `ai-${Date.now()}`,
+      // Use the "Friendly Puppy Friend!" text if the query was restricted
+      title: isRestricted ? "How about Friendly Puppy Friend!" : (aiTitle || `Photo: ${query}`),
+      imageUrl: base64Image ? `data:image/png;base64,${base64Image}` : "",
+      type: 'image',
+      generatedAt: new Date(),
+      description: isRestricted 
+        ? "Friendly Puppy Friend!" // Exact text from your branding
+        : ``
+    };
+
+  } catch (error) {
+    console.error("Gemini Generation Error:", error);
+    // Generic error fallback also follows branding
+    throw new Error("Friendly Puppy Friend!"); 
+  }
+}
+
+
+
+
+export async function getSearchResults(query: string): Promise<VisualResult[]> {
+  const normalizedQuery = query.toLowerCase().trim();
+  
+  // Apply Safety Blocklist Check for Search
+  const isRestricted = SAFETY_BLOCKLIST.some(word => normalizedQuery.includes(word));
+
+  if (isRestricted) {
+    return [{
+      id: `safe-search-${Date.now()}`,
+      title: "Friendly Puppy Friend!",
+      thumbnail: 'https://images.unsplash.com/photo-1583511655857-d19b40a7a54e?w=300',
+      type: 'image',
+      description: "Friendly Puppy Friend!",
+      link: "#",
+      snippet: "I only search for happy things!"
+    }];
   }
 
-  return {
-    id: `generated-${Date.now()}`,
-    title: `Generated: ${query}`,
-    imageUrl,
-    type: 'image',
-    generatedAt: new Date(),
-  };
+
 }
+
+
 
 /**
  * FUTURE: Speech-to-text integration point

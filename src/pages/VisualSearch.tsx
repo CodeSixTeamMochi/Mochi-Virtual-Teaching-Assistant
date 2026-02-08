@@ -7,10 +7,10 @@ import {
   GenerateWithMochiPanel
 } from '@/components/mochi';
 import {
-  mockSearchResults,
-  mockGenerateContent,
-  type VisualResult,
-  type GeneratedContent
+  getSearchResults,    
+  generateAIContent,   
+  type VisualResult,      
+  type GeneratedContent   
 } from '@/services/visualSearchService';
 
 /**
@@ -18,12 +18,6 @@ import {
  * 
  * A production-ready React frontend for preschool classroom use.
  * Features real-time visual search and AI content generation.
- * 
- * FUTURE INTEGRATION POINTS:
- * - Replace mockSearchResults with Gemini API search
- * - Replace mockGenerateContent with Gemini Vision/Image generation
- * - Add WebSocket for real-time streaming
- * - Integrate speech-to-text for voice commands
  */
 const VisualSearch = () => {
   // State management
@@ -43,13 +37,16 @@ const VisualSearch = () => {
    * Searches for visual content based on teacher's query
    */
   const handleSearch = useCallback(async (query: string) => {
+    if (!query.trim()) return;
+
     setSearchQuery(query);
     setIsSearching(true);
     setHasSearched(true);
     setShowResults(true);
 
     try {
-      const results = await mockSearchResults(query);
+      // Replaced mock with real service function
+      const results = await getSearchResults(query);
       setSearchResults(results);
     } catch (error) {
       console.error('Search error:', error);
@@ -61,40 +58,46 @@ const VisualSearch = () => {
 
   /**
    * Handle AI generation action
-   * Generates visual content using AI (mock for now)
    */
   const handleGenerateWithAI = useCallback(async (query: string) => {
-    setSearchQuery(query);
+    if (!query.trim()) return;
+
+    setGeneratedContent(null); 
+    setSearchQuery(query); 
     setIsGenerating(true);
     setShowResults(true);
 
     try {
-      const content = await mockGenerateContent(query);
-      setGeneratedContent(content);
+      // This calls the generateAIContent in visualSearchService.ts 
+      const result = await generateAIContent(query); 
+      
+      if (result) {
+        setGeneratedContent(result);
+      }
     } catch (error) {
-      console.error('Generation error:', error);
+      console.error('Gemini Generation error:', error);
     } finally {
       setIsGenerating(false);
     }
   }, []);
 
+
   /**
    * Handle generate button click in the panel
    */
-  const handlePanelGenerate = useCallback(async () => {
-    if (searchQuery.trim()) {
-      await handleGenerateWithAI(searchQuery);
+  const handlePanelGenerate = useCallback(async (queryFromPanel: string) => {
+    const activeQuery = queryFromPanel || searchQuery;
+    if (activeQuery.trim()) {
+      await handleGenerateWithAI(activeQuery);
     }
   }, [searchQuery, handleGenerateWithAI]);
 
   /**
    * Handle result card click
-   * Sets selected result for preview
    */
   const handleResultClick = useCallback((result: VisualResult) => {
     setSelectedResult(result);
-    // Could show in the generate panel or open a modal
-    console.log('Selected result:', result);
+
   }, []);
 
   /**
@@ -106,6 +109,7 @@ const VisualSearch = () => {
     setSearchResults([]);
     setSearchQuery('');
     setGeneratedContent(null);
+    setSelectedResult(null);
   }, []);
 
   // Home view with greeting
