@@ -34,7 +34,7 @@ export interface GeneratedContent {
 export async function generateAIContent(query: string): Promise<GeneratedContent> {
   const normalizedQuery = query.toLowerCase().trim();
   
-  // LAYER 1: Local Safety Check
+   // LAYER 1: Local Safety Check
   const isRestricted = SAFETY_BLOCKLIST.some(word => normalizedQuery.includes(word));
   
   // Re-route restricted queries to a puppy so the AI generates a real image
@@ -64,7 +64,7 @@ export async function generateAIContent(query: string): Promise<GeneratedContent
       contents: [{ 
         role: "user", 
         parts: [{ 
-          text: `A high-resolution, photorealistic  cinematic photo of: ${effectiveQuery}. 
+          text: `A high-resolution photo of: ${effectiveQuery}. 
                  Sharp focus, natural lighting, highly detailed textures.` 
         }] 
       }],
@@ -140,33 +140,44 @@ export async function getSearchResults(query: string): Promise<VisualResult[]> {
     }];
   }
 
+  // Retrieve keys from .env file
+  const GOOGLE_API_KEY = import.meta.env.VITE_GOOGLE_SEARCH_API_KEY;
+  const GOOGLE_CX = import.meta.env.VITE_GOOGLE_CX;
 
+  try {
+    // API Call to Google Custom Search (Image Mode)
+    // Updated with safe=active and strict searchType parameters
+    const response = await fetch(
+      `https://www.googleapis.com/customsearch/v1?key=${GOOGLE_API_KEY}&cx=${GOOGLE_CX}&q=${encodeURIComponent(query)}&searchType=image&num=6&safe=active`
+    );
+    
+    const data = await response.json();
+
+    // 🕵️ DIAGNOSTIC LOGS: If this doesn't work, check your browser console (F12)
+    if (data.error) {
+      console.error("Google Search API Error:", data.error.message);
+      console.error("Reason:", data.error.errors?.[0]?.reason);
+      return [];
+    }
+
+    if (!data.items || data.items.length === 0) {
+      console.warn("Google returned 0 results. Please ensure you have added '*' to your 'Sites to Search' in the Google Search Dashboard.");
+      return [];
+    }
+
+    // Mapping Google response to VisualResult format
+    return data.items.map((item: any) => ({
+      id: item.link,
+      title: item.title,
+      thumbnail: item.image?.thumbnailLink || item.link, 
+      type: 'image',
+      description: `Source: ${item.displayLink}`,
+      link: item.link,
+      snippet: item.snippet
+    }));
+  } catch (error) {
+    console.error("Critical Google Search API Error:", error);
+    return []; 
+  }
 }
 
-
-
-/**
- * FUTURE: Speech-to-text integration point
- * 
- * Example implementation:
- * export async function startSpeechRecognition(
- *   onResult: (text: string) => void,
- *   onError: (error: Error) => void
- * ): Promise<void> {
- *   const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
- *   recognition.continuous = false;
- *   recognition.interimResults = false;
- *   recognition.lang = 'en-US';
- *   
- *   recognition.onresult = (event) => {
- *     const transcript = event.results[0][0].transcript;
- *     onResult(transcript);
- *   };
- *   
- *   recognition.onerror = (event) => {
- *     onError(new Error(event.error));
- *   };
- *   
- *   recognition.start();
- * }
- */

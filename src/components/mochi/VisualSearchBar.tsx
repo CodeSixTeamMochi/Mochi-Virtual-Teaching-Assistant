@@ -4,7 +4,6 @@ import { Button } from "@/components/ui/button";
 
 /** * WEB SPEECH API INTERFACES
  * These tell TypeScript how the browser's built-in voice recognition works.
- * This is crucial for "Codebase B" logic to function without red error lines.
  */
 interface SpeechRecognitionEvent extends Event {
   results: SpeechRecognitionResultList;
@@ -20,8 +19,6 @@ interface SpeechRecognitionInstance extends EventTarget {
   onend: (() => void) | null; 
   onerror: (() => void) | null;
 }
-
-// Extends the global 'window' object to recognize the Speech API
 declare global { 
   interface Window { 
     SpeechRecognition?: new () => SpeechRecognitionInstance; 
@@ -74,13 +71,21 @@ const VisualSearchBar = ({
           .join('');
         setQuery(transcript);
 
-        // --- NEW MOCHI WAKE WORD LOGIC ---
+        // --- UPDATED MOCHI WAKE WORD LOGIC ---
+        // Enhanced to be more flexible (catches "Mochi find", "Mochi show me", etc.)
         const lowerTranscript = transcript.toLowerCase();
-        if (lowerTranscript.includes("mochi search for")) {
-          const autoQuery = lowerTranscript.split("mochi search for")[1]?.trim();
-          if (autoQuery) {
+        const wakeWord = "mochi";
+        
+        if (lowerTranscript.includes(wakeWord)) {
+          const parts = lowerTranscript.split(wakeWord);
+          const autoQuery = parts[parts.length - 1]
+            .replace(/search for|find|show me|look for/g, "")
+            .trim();
+
+          if (autoQuery.length > 0) {
             onSearch(autoQuery); // Automatically triggers the search
-            recognitionRef.current?.stop();
+            setIsListening(false);
+            recognitionRef.current?.stop(); // Immediately stops mic after successful trigger
           }
         }
       };
@@ -104,7 +109,7 @@ const VisualSearchBar = ({
       recognitionRef.current.start();
       setIsListening(true);
     }
-  }
+  };
 
   /**
    * FORM SUBMISSION
@@ -128,7 +133,8 @@ const VisualSearchBar = ({
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder={placeholder}
+            // UPDATED: Dynamic placeholder to tell the child Mochi is listening
+            placeholder={isListening ? "Mochi is listening... 👂" : placeholder}
             disabled={isLoading}
             className="w-full pl-12 pr-12 py-3.5 bg-muted/50 rounded-full text-foreground focus:outline-none transition-all shadow-inner"
           />
