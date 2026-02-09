@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import mochiImage from "@/assets/mochi-avatar.jpg";
+import mochiImage from "@/assets/mochi-avatar.jpeg";
 
 interface MochiAvatarProps {
   message?: string;

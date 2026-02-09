@@ -50,7 +50,7 @@ const RevisionGames = () => {
         </div>
 
         <Button
-          onClick={() => navigate("/create")}
+          onClick={() => navigate("/create-activity")}
           className="bg-primary hover:bg-primary/90 rounded-full w-12 h-12 p-0"
         >
           <Plus className="w-6 h-6" />
