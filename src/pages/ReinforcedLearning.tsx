@@ -63,6 +63,9 @@ export default function ReinforcedLearning() {
     const formData = new FormData();
     formData.append('audio', blob, 'recording.webm');
 
+    // Pass current history state as a stringified JSON
+    formData.append('history', JSON.stringify(history));
+
     setFeedback("Mochi is listening... ✨");
     setIsThinking(true);
 
@@ -72,7 +75,7 @@ export default function ReinforcedLearning() {
 
       setHistory(prev => [
         ...prev, 
-        { role: 'child', text: transcription || "..." }, 
+        { role: 'child', text: transcription || "I was talking!" }, 
         { role: 'mochi', text: mochiResponse }
       ]);
       
@@ -101,6 +104,7 @@ export default function ReinforcedLearning() {
     } catch (err) {
       console.error(err);
       setFeedback("Mochi's brain is offline! Check your Python terminal.");
+      setIsThinking(false);
     }
   };
 
