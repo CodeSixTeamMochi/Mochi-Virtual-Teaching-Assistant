@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import RevisionGames from "./pages/RevisionGames";
 import CreateActivity from "./pages/CreateActivity";
+import GamePage from "./pages/GamePage";
 
 const queryClient = new QueryClient();
 
@@ -26,6 +27,7 @@ const App = () => (
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/revision-games" element={<RevisionGames />} />
           <Route path="/create-activity" element={<CreateActivity />} />
+          <Route path="/game/:categoryId" element={<GamePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

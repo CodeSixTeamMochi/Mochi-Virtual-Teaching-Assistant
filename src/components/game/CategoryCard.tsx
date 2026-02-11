@@ -39,7 +39,7 @@ const CategoryCard = ({ category, onPlay, index }: CategoryCardProps) => {
 
         <Button
           onClick={() => onPlay(category)}
-          className="w-full bg-success hover:bg-success/90 text-success-foreground font-bold rounded-xl py-5"
+          className="w-full bg-login-button hover:login-button-hover text-success-foreground font-bold rounded-xl py-5"
         >
           Play
         </Button>

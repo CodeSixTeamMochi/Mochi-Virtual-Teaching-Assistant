@@ -1,8 +1,8 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800&display=swap');
 
 /* Mochi Teacher Dashboard Design System - Soft, Friendly, Child-Education Aesthetic */
 
@@ -37,6 +37,10 @@
     /* Success - Soft Green */
     --success: 145 60% 45%;
     --success-foreground: 0 0% 100%;
+
+    /* Play hover - sky-500 */
+    --play-hover:195 70% 50%;
+    --play-hover-foreground:195 70% 45%;
 
     /* Warning - Soft Coral/Red */
     --warning: 0 70% 60%;
