@@ -14,7 +14,16 @@ const StudentCard = ({ student, onUpdate }: Props) => {
   const [addingMedicine, setAddingMedicine] = useState(false);
 
   const handleCall = () => {
-    alert(`📞 Calling ${student.name}'s parent at ${student.parentPhone}...`);
+    // Format phone number - remove spaces and special characters
+    const formattedPhone = student.parentPhone.replace(/\s+/g, '').replace(/-/g, '');
+    
+    // If the phone number doesn't start with +, add Sri Lanka country code (+94)
+    const phoneWithCountryCode = formattedPhone.startsWith('+') 
+      ? formattedPhone 
+      : `+94${formattedPhone.replace(/^0/, '')}`; // Remove leading 0 and add +94
+    
+    // Open dialer with the phone number
+    window.location.href = `tel:${phoneWithCountryCode}`;
   };
 
   const addAllergy = () => {

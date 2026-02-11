@@ -12,8 +12,17 @@ interface Props {
 }
 
 const EmergencyContacts = ({ contacts }: Props) => {
-  const handleCall = (phone: string, name: string) => {
-    alert(`📞 Calling ${name} at ${phone}...`);
+  const handleCall = (phone: string) => {
+    // Format phone number - remove spaces and special characters
+    const formattedPhone = phone.replace(/\s+/g, '').replace(/-/g, '');
+    
+    // If the phone number doesn't start with +, add Sri Lanka country code (+94)
+    const phoneWithCountryCode = formattedPhone.startsWith('+') 
+      ? formattedPhone 
+      : `+94${formattedPhone.replace(/^0/, '')}`; // Remove leading 0 and add +94
+    
+    // Open dialer with the phone number
+    window.location.href = `tel:${phoneWithCountryCode}`;
   };
 
   return (
@@ -41,7 +50,7 @@ const EmergencyContacts = ({ contacts }: Props) => {
               <span className="text-2xl">{iconMap[contact.icon]}</span>
             </div>
             <button
-              onClick={() => handleCall(contact.phone, contact.name)}
+              onClick={() => handleCall(contact.phone)}
               className="w-full rounded-full bg-emergency py-2 text-sm font-semibold text-emergency-foreground transition-opacity hover:opacity-90"
             >
               Call Now
