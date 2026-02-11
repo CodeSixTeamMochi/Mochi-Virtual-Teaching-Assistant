@@ -42,6 +42,11 @@
     --warning: 0 70% 60%;
     --warning-foreground: 0 0% 100%;
 
+    /* Notification Bell - Yellow */
+    --notification: 40 95% 55%;
+    --notification-foreground: 30 50% 15%;
+
+
     /* Info - Light Blue Card Background */
     --info: 195 60% 92%;
     --info-foreground: 195 70% 35%;
@@ -63,8 +68,6 @@
     /* Emergency*/
     --emergency: 350 85% 60%;
     --emergency-foreground: 0 0% 100%;
-    --warning: 40 95% 55%;              /*Overided */
-    --warning-foreground: 30 50% 15%;    /*Overided */
     --health: 350 70% 55%;
     --health-foreground: 0 0% 100%;
     --call: 200 80% 55%;
@@ -214,6 +217,13 @@
     background: hsl(var(--warning));
     color: hsl(var(--warning-foreground));
   }
+
+  .notification-bell-yellow {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+    background: hsl(var(--notification));
+    color: hsl(var(--notification-foreground));
+  }
+  
 }
 
 @layer utilities {

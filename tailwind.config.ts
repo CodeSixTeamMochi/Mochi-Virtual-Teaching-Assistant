@@ -58,6 +58,10 @@ export default {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
+        notification: {
+          DEFAULT: "hsl(var(--notification))",
+          foreground: "hsl(var(--notification-foreground))",
+        },      
         health: {
           DEFAULT: "hsl(var(--health))",
           foreground: "hsl(var(--health-foreground))",

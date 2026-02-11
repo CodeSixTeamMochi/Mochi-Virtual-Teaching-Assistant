@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { ArrowLeft } from "lucide-react";
 import EmergencyContacts from "@/components/EmergencyContacts";
-
+import MedicationReminders from "@/components/MedicationReminders";
+import StudentHealthRecords from "@/components/StudentHealthRecords";
 import { emergencyContacts, students as initialStudents, Student } from "@/Data/mockData";
 
 const Index = () => {
@@ -29,6 +30,8 @@ const Index = () => {
       {/* Content */}
       <main className="mx-auto max-w-4xl space-y-4 p-4">
         <EmergencyContacts contacts={emergencyContacts} />
+        <MedicationReminders />
+        <StudentHealthRecords students={students} onUpdateStudent={handleUpdateStudent} />
       </main>
     </div>
   );
