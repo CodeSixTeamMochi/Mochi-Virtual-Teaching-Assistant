@@ -60,6 +60,16 @@
 
     --radius: 1rem;
 
+    /* Emergency*/
+    --emergency: 350 85% 60%;
+    --emergency-foreground: 0 0% 100%;
+    --warning: 40 95% 55%;              /*Overided */
+    --warning-foreground: 30 50% 15%;    /*Overided */
+    --health: 350 70% 55%;
+    --health-foreground: 0 0% 100%;
+    --call: 200 80% 55%;
+    --call-foreground: 0 0% 100%;
+
     /* Login specific colors */
     --login-bg: 200 20% 96%;
     --login-card: 0 0% 100%;
