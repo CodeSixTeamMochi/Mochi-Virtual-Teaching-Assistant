@@ -1,15 +1,16 @@
 import React, { useState, useRef } from 'react';
-import axios from 'axios';
+import { chatWithMochi, ChatMessage } from '../services/ReinforcedLearningService';
 import { Mic, Square } from 'lucide-react';
 
 export default function ReinforcedLearning() {
   const [feedback, setFeedback] = useState("");
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorder = useRef(null);
-  const audioChunks = useRef([]);
+  const audioChunks = useRef<BlobPart[]>([]);
   const [isThinking, setIsThinking] = useState(false);
-  const [history, setHistory] = useState([]); // Stores the chat messages
-  const scrollRef = useRef(null); // Helps us scroll to the latest message
+
+  const [history, setHistory] = useState<ChatMessage[]>([]); // Stores the chat messages
+  const scrollRef = useRef<HTMLDivElement>(null); // Helps us scroll to the latest message
 
   const cleanTextForNaturalSpeech = (text) => {
     return text
@@ -59,19 +60,14 @@ export default function ReinforcedLearning() {
   };
 
   // FUNCTION: Send Audio File to Backend
-  const sendAudioToMochi = async (blob) => {
-    const formData = new FormData();
-    formData.append('audio', blob, 'recording.webm');
-
-    // Pass current history state as a stringified JSON
-    formData.append('history', JSON.stringify(history));
+  const sendAudioToMochi = async (blob: Blob) => {
 
     setFeedback("Mochi is listening... ✨");
     setIsThinking(true);
 
     try {
-      const res = await axios.post('http://localhost:5000/api/chat-with-mochi', formData);
-      const { transcription, mochiResponse } = res.data;
+      const res = await chatWithMochi(blob, history);
+      const { transcription, mochiResponse } = res;
 
       setHistory(prev => [
         ...prev, 
@@ -148,6 +144,12 @@ export default function ReinforcedLearning() {
             className={`w-96 h-96 object-contain transition-all duration-700`} 
           />
           <h1 className="text-5xl font-extrabold text-[#334155] mt-6 tracking-tight">Hello! I'm Mochi</h1>
+
+          <div className="mt-8 min-h-[60px] px-6 py-4 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100 max-w-2xl text-center">
+            <p className="text-xl text-slate-600 font-medium leading-relaxed">
+              {feedback}
+            </p>
+          </div>
         </div>
     
         {/* THE INTERACTION PILL */}
