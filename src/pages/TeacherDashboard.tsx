@@ -29,22 +29,28 @@ const TeacherDashboard = () => {
 
   const features = [
     { 
+      icon: Gamepad2, 
+      title: "Revison Games", 
+      description: "Do some activities with kids",
+      onClick: () => navigate("/activities")
+    },
+    { 
       icon: Play, 
       title: "Start Lesson", 
       description: "Create and manage lessons",
       onClick: () => navigate("/lessons")
     },
     { 
-      icon: Gamepad2, 
-      title: "Activities", 
-      description: "Do some activities with kids",
-      onClick: () => navigate("/activities")
-    },
-    { 
       icon: FileText, 
       title: "Speech Reports", 
       description: "View speech analysis reports",
       onClick: () => navigate("/speech-reports")
+    },
+    { 
+      icon: Calendar, 
+      title: "Calendar", 
+      description: "Manage your schedule",
+      onClick: () => navigate("/calendar")
     },
     { 
       icon: Heart, 
@@ -57,13 +63,8 @@ const TeacherDashboard = () => {
       title: "Parent Reminders", 
       description: "Send notifications to parents",
       onClick: () => navigate("/reminders")
-    },
-    { 
-      icon: Calendar, 
-      title: "Calendar", 
-      description: "Manage your schedule",
-      onClick: () => navigate("/calendar")
-    },
+    }
+    
   ];
 
   const handleLogout = () => {
@@ -91,7 +92,7 @@ const TeacherDashboard = () => {
         <MochiWelcomeCard />
 
         {/* Birthday Notification */}
-        <BirthdayNotification studentName="Hesandu" />
+        <BirthdayNotification studentName="Mochi" />
 
         {/* Feature Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
