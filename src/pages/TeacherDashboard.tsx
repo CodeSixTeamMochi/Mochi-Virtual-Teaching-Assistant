@@ -83,42 +83,43 @@ const TeacherDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background p-4 md:p-6 ">
-      <div className="space-y-4">
-        {/* Header */}
+    <div className="min-h-screen bg-background p-4 md:p-8 lg:p-10"> {/* Increased padding for breathability */}
+      <div className="max-w-7xl mx-auto space-y-8"> {/* Added container for better wide-screen look */}
+        
         <DashboardHeader teacherName={teacherName} onLogout={handleLogout} />
 
-        {/* Welcome Card */}
         <MochiWelcomeCard />
 
-        {/* Birthday Notification */}
         <BirthdayNotification studentName="Mochi" />
 
-        {/* Feature Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {features.map((feature, index) => (
-            <FeatureCard
-              key={feature.title}
-              icon={feature.icon}
-              title={feature.title}
-              description={feature.description}
-              onClick={feature.onClick}
-              variant={index < 2 ? "primary" : "default"}
-              style={{ animationDelay: `${0.3 + index * 0.05}s` }}
-            />
-          ))}
-        </div>
-
-        {/* Bottom Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Schedule */}
-          <ScheduleCard events={scheduleEvents} />
-
-          {/* Stats */}
-          <div className="space-y-3">
-            <StatCard label="Total Students" value={20} variant="green" />
-            <StatCard label="Activities Done" value={13} variant="yellow" />
+        {/* Improved Grid Layout */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          
+          {/* Left: Feature Grid (Spans 8 columns) */}
+          <div className="lg:col-span-8">
+            <h3 className="text-lg font-bold mb-4 px-1">Quick Actions</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {features.map((feature, index) => (
+                <FeatureCard
+                  key={feature.title}
+                  {...feature}
+                  variant={index < 2 ? "primary" : "default"}
+                  style={{ animationDelay: `${0.2 + index * 0.05}s` }}
+                />
+              ))}
+            </div>
           </div>
+
+          {/* Right: Schedule & Stats (Spans 4 columns) */}
+          <div className="lg:col-span-4 space-y-6">
+            <h3 className="text-lg font-bold mb-4 px-1">Overview</h3>
+            <ScheduleCard events={scheduleEvents} />
+            <div className="grid grid-cols-2 lg:grid-cols-1 gap-4">
+              <StatCard label="Total Students" value={20} variant="green" />
+              <StatCard label="Activities Done" value={13} variant="yellow" />
+            </div>
+          </div>
+          
         </div>
       </div>
     </div>
