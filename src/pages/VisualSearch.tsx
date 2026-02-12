@@ -7,17 +7,14 @@ import {
   GenerateWithMochiPanel
 } from '@/components/mochi';
 import {
-  getSearchResults,    
-  generateAIContent,   
+  getUnsplashResults,      
+  generateAIContent,
   type VisualResult,      
   type GeneratedContent   
 } from '@/services/visualSearchService';
 
 /**
  * Mochi Virtual Teaching Assistant - Main Interface
- * 
- * A production-ready React frontend for preschool classroom use.
- * Features real-time visual search and AI content generation.
  */
 const VisualSearch = () => {
   // State management
@@ -33,8 +30,7 @@ const VisualSearch = () => {
   const [showResults, setShowResults] = useState(false);
 
   /**
-   * Handle search action
-   * Searches for visual content based on teacher's query
+   * Handle search action (Connects to Unsplash API)
    */
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) return;
@@ -45,11 +41,11 @@ const VisualSearch = () => {
     setShowResults(true);
 
     try {
-      // Replaced mock with real service function
-      const results = await getSearchResults(query);
+      // Replaced Google search with Unsplash search
+      const results = await getUnsplashResults(query); 
       setSearchResults(results);
     } catch (error) {
-      console.error('Search error:', error);
+      console.error('Unsplash search error:', error);
       setSearchResults([]);
     } finally {
       setIsSearching(false);
@@ -57,7 +53,7 @@ const VisualSearch = () => {
   }, []);
 
   /**
-   * Handle AI generation action
+   * Handle AI generation action (Integrated with Gemini 3 Native Generation)
    */
   const handleGenerateWithAI = useCallback(async (query: string) => {
     if (!query.trim()) return;
@@ -68,7 +64,6 @@ const VisualSearch = () => {
     setShowResults(true);
 
     try {
-      // This calls the generateAIContent in visualSearchService.ts 
       const result = await generateAIContent(query); 
       
       if (result) {
@@ -81,10 +76,9 @@ const VisualSearch = () => {
     }
   }, []);
 
-
   /**
-   * Handle generate button click in the panel
-   */
+   * Sidebar Trigger
+  */
   const handlePanelGenerate = useCallback(async (queryFromPanel: string) => {
     const activeQuery = queryFromPanel || searchQuery;
     if (activeQuery.trim()) {
@@ -109,10 +103,10 @@ const VisualSearch = () => {
     setSearchResults([]);
     setSearchQuery('');
     setGeneratedContent(null);
-    setSelectedResult(null);
   }, []);
 
   // Home view with greeting
+  // --- UI RENDERING (UNTOUCHED) ---
   if (!showResults) {
     return (
       <div className="min-h-screen bg-sky-50 flex flex-col relative">
@@ -134,7 +128,7 @@ const VisualSearch = () => {
               onSearch={handleSearch}
               onGenerateWithAI={handleGenerateWithAI}
               isLoading={isSearching || isGenerating}
-              placeholder="Search from google"
+              placeholder="Search photos"
             />
           </div>
         </div>
@@ -144,8 +138,7 @@ const VisualSearch = () => {
 
   // Results view with two-column layout
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      {/* Header with back button */}
+    <div className="min-h-screen bg-sky-50 flex flex-col relative">
       <div className="p-4 border-b border-border/50">
         <button
           onClick={handleBack}
@@ -161,7 +154,7 @@ const VisualSearch = () => {
         <div className="flex-1 flex flex-col p-4 lg:p-6">
           <div className="mb-4">
             <h2 className="text-lg font-semibold text-foreground mb-3">Results</h2>
-            
+
             <div className="max-w-3xl">
               <VisualSearchBar
                 onSearch={handleSearch}

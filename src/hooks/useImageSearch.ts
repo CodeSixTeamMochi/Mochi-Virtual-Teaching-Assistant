@@ -1,10 +1,13 @@
 import { useState, useCallback } from "react";
-import { getSearchResults, type VisualResult } from "@/services/visualSearchService";
+// UPDATED: Import the specific Unsplash function from your service
+import { getUnsplashResults, type VisualResult } from "@/services/visualSearchService";
 
 /**
- * MOCHI SEARCH HOOK
+ * MOCHI UNSPLASH SEARCH HOOK
+ * -------------------------
+ * Connects your UI specifically to high-quality Unsplash photos.
  */
-export const useGoogleSearch = () => {
+export const useUnsplashSearch = () => {
   const [results, setResults] = useState<VisualResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -18,12 +21,12 @@ export const useGoogleSearch = () => {
     
     try {
       /**
-       *CALL CONSOLIDATED SERVICE
+       * CALL UNSPLASH SERVICE.
        */
-      const data = await getSearchResults(trimmedQuery);
+      const data = await getUnsplashResults(trimmedQuery);
 
       /**
-       * 2. UPDATE UI STATE
+       *UPDATE UI STATE
        */
       if (data && data.length > 0) {
         setResults(data);
@@ -33,9 +36,9 @@ export const useGoogleSearch = () => {
         setError("Mochi couldn't find any photos for that. Try another word!");
       }
     } catch (err: any) {
-      // 3. ERROR HANDLING
-      console.error("Hook Search Error:", err);
-      setError("Mochi's search lens is a bit foggy. Check your connection!");
+      // ERROR HANDLING
+      console.error("Unsplash Hook Search Error:", err);
+      setError("Mochi's photo book is stuck. Let's try again!");
       setResults([]);
     } finally {
       setIsLoading(false);
