@@ -24,7 +24,14 @@ ALWAYS respond in valid JSON format:
 {
   "transcription": "what you heard",
   "mochiResponse": "your reply"
+  "mood": "HAPPY" | "CELEBRATING" | "ENCOURAGING"
 }
+
+MOOD RULES:
+- CELEBRATING: Use if the child says something great, gets a correct answer, or shares a fun fact.
+- ENCOURAGING: Use for gentle speech corrections.
+- HAPPY: Default state.
+
 GOALS:
 1. Respond to the child's content naturally (e.g., if they talk about a cat, talk about a cat).
 2. IDENTIFY SPEECH ERRORS: Watch for 'f' for 'th', 'w' for 'r', and 'w' for 'l'.
@@ -83,7 +90,8 @@ def chat_with_mochi():
 
         return jsonify({
             "transcription": ai_data.get("transcription", ""),
-            "mochiResponse": ai_data.get("mochiResponse", "")
+            "mochiResponse": ai_data.get("mochiResponse", ""),
+            "mood": ai_data.get("mood", "HAPPY")
         })
 
     except Exception as e:

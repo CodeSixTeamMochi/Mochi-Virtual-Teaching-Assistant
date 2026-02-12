@@ -1,8 +1,9 @@
 import axios from 'axios';
 
 export interface MochiResponse {
-    transcription: string
-    mochiResponse: string
+    transcription: string;
+    mochiResponse: string;
+    mood?: 'HAPPY' | 'CELEBRATING' | 'ENCOURAGING' | 'THINKING';
 }
 
 export interface ChatMessage {

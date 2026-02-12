@@ -1,9 +1,13 @@
 import React, { useState, useRef } from 'react';
 import { chatWithMochi, ChatMessage } from '../services/ReinforcedLearningService';
-import { Mic, Square } from 'lucide-react';
+import MochiAvatar from '../components/ui/MochiAvatar';
+import FeedbackBubble from '../components/ui/FeedbackBubble';
+import InteractionPill from '../components/ui/InteractionPill';
+import ChatHistory from '../components/ui/ChatHistory';
 
 export default function ReinforcedLearning() {
   const [feedback, setFeedback] = useState("");
+  const [mood, setMood] = useState<string>("HAPPY");
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorder = useRef(null);
   const audioChunks = useRef<BlobPart[]>([]);
@@ -67,7 +71,7 @@ export default function ReinforcedLearning() {
 
     try {
       const res = await chatWithMochi(blob, history);
-      const { transcription, mochiResponse } = res;
+      const { transcription, mochiResponse, mood: aiMood } = res;
 
       setHistory(prev => [
         ...prev, 
@@ -76,6 +80,7 @@ export default function ReinforcedLearning() {
       ]);
       
       setFeedback(mochiResponse);
+      if (aiMood) setMood(aiMood);
       
       // MOCHI VOICE LOGIC
       const synth = window.speechSynthesis;
@@ -106,71 +111,39 @@ export default function ReinforcedLearning() {
 
   return (
     <div className="h-screen w-full flex bg-[#f0f9ff] overflow-hidden">
+      
       {/* LEFT SIDE: HISTORY BAR */}
-      <div className="w-80 bg-white/60 backdrop-blur-md border-r border-white/40 flex flex-col p-6 shadow-xl z-30">
-        <h2 className="text-2xl font-bold text-slate-700 mb-6 flex items-center gap-2">
-          <span>📜</span> Story So Far
-        </h2>
-
-        <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
-          {history.length === 0 ? (
-            <p className="text-slate-400 italic text-sm mt-4">No messages yet. Say hello!</p>
-          ) : (
-            history.map((chat, i) => (
-              <div 
-                key={i} 
-                className={`p-3 rounded-2xl text-sm shadow-sm ${
-                  chat.role === 'mochi' 
-                    ? 'bg-[#ffb37b] text-white rounded-bl-none ml-2' 
-                    : 'bg-white text-slate-600 rounded-br-none mr-2 border border-slate-100'
-                }`}
-              >
-                <p className="font-bold text-[10px] uppercase opacity-70 mb-1">
-                  {chat.role === 'mochi' ? 'Mochi' : 'You'}
-                </p>
-                {chat.text}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
+      <ChatHistory history={history} scrollRef={scrollRef} />
 
       {/* RIGHT SIDE: MOCHI INTERACTION */}
-      <div className="flex-1 flex flex-col items-center justify-center relative p-8">
-        <div className="flex-1 flex flex-col items-center justify-center">
-          <img 
-            src="/mochi_waving.gif" 
-            alt="Mochi" 
-            className={`w-96 h-96 object-contain transition-all duration-700`} 
-          />
-          <h1 className="text-5xl font-extrabold text-[#334155] mt-6 tracking-tight">Hello! I'm Mochi</h1>
+      <div className="flex-1 h-screen flex flex-col items-center justify-center p-6 relative">
 
-          <div className="mt-8 min-h-[60px] px-6 py-4 bg-white/80 backdrop-blur-sm rounded-2xl shadow-sm border border-slate-100 max-w-2xl text-center">
-            <p className="text-xl text-slate-600 font-medium leading-relaxed">
-              {feedback}
-            </p>
-          </div>
-        </div>
-    
-        {/* THE INTERACTION PILL */}
-        <div className="w-full max-w-xl mb-12 relative z-20">
-          <div className="bg-white rounded-[50px] shadow-2xl flex items-center p-4 border border-white justify-between">
-            <p className="text-xl text-gray-400 px-6 italic">
-              {isThinking ? "Mochi is thinking..." : isRecording ? "Listening to you..." : "Tap the mic to talk to Mochi"}
-            </p>
+        <div className="flex flex-col items-center justify-center w-full max-w-2xl gap-5 transition-all duration-500">
+            
+            <div className="transform scale-100 transition-transform duration-700">
+              <MochiAvatar 
+                mood={mood} 
+                isThinking={isThinking} 
+              />
 
-            <button
-              disabled={isThinking} 
-              onClick={isRecording ? stopRecording : startRecording}
-              className={`p-6 rounded-full transition-all duration-300 ${
-                isThinking ? 'bg-slate-200 cursor-not-allowed opacity-50' :
-                isRecording ? 'bg-red-500 text-white animate-pulse shadow-[0_0_20px_rgba(239,68,68,0.5)]' :
-                'bg-[#ffb37b] text-white shadow-lg hover:scale-110 active:scale-95'
-              }`}
-            >
-              {isRecording ? <Square size={32} /> : <Mic size={32} />}
-            </button>
-          </div>
+              <div className="w-full flex justify-center items-start min-h-[2rem]">
+                <FeedbackBubble 
+                  feedback={feedback} 
+                  mood={mood} 
+                />
+              </div>
+
+            </div>
+
+            <div className="w-full flex justify-center">
+              <InteractionPill 
+                isThinking={isThinking}
+                isRecording={isRecording}
+                startRecording={startRecording}
+                stopRecording={stopRecording}
+                mood={mood}
+              />
+            </div>
         </div>
       </div>
     </div>
