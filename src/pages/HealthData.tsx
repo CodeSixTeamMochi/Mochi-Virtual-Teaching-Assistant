@@ -4,22 +4,29 @@ import { ArrowLeft } from "lucide-react";
 import EmergencyContacts from "@/components/EmergencyContacts";
 import MedicationReminders from "@/components/MedicationReminders";
 import StudentHealthRecords from "@/components/StudentHealthRecords";
-import { emergencyContacts, students as initialStudents, Student } from "@/Data/mockData";
+import { emergencyContacts, students as initialStudents, medicationReminders as initialReminders, Student, MedicationReminder } from "@/Data/mockData";
 
-const STORAGE_KEY = "mochi_student_health_data";
+const STORAGE_KEY_STUDENTS = "mochi_student_health_data";
+const STORAGE_KEY_MEDICATIONS = "mochi_medication_reminders";
 
 const HealthData = () => {
   const navigate = useNavigate();
   
   // Load from localStorage or use initial data
   const [students, setStudents] = useState<Student[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY_STUDENTS);
     return saved ? JSON.parse(saved) : initialStudents;
+  });
+
+  // Load medication reminders from localStorage or use initial data
+  const [medications, setMedications] = useState<MedicationReminder[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_MEDICATIONS);
+    return saved ? JSON.parse(saved) : initialReminders;
   });
 
   // Save to localStorage whenever students change
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+    localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(students));
   }, [students]);
 
   const handleUpdateStudent = (updated: Student) => {
@@ -32,6 +39,18 @@ const HealthData = () => {
 
   const handleDeleteStudent = (studentId: string) => {
     setStudents((prev) => prev.filter((s) => s.id !== studentId));
+  };
+
+  const handleAddMedication = (newMedication: MedicationReminder) => {
+    setMedications((prev) => [...prev, newMedication]);
+  };
+
+  const handleUpdateMedication = (updated: MedicationReminder) => {
+    setMedications((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
+  };
+
+  const handleDeleteMedication = (medicationId: string) => {
+    setMedications((prev) => prev.filter((m) => m.id !== medicationId));
   };
 
   const handleBack = () => {
@@ -58,7 +77,13 @@ const HealthData = () => {
       {/* Content */}
       <main className="mx-auto max-w-4xl space-y-4 p-4">
         <EmergencyContacts contacts={emergencyContacts} />
-        <MedicationReminders />
+        <MedicationReminders 
+        medications={medications}
+        students={students}
+        onAddMedication={handleAddMedication}
+        onUpdateMedication={handleUpdateMedication}
+        onDeleteMedication={handleDeleteMedication}
+        />
         <StudentHealthRecords 
         students={students} 
         onUpdateStudent={handleUpdateStudent} 
