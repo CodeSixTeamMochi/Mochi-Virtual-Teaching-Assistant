@@ -4,6 +4,7 @@ import MochiAvatar from '../components/ui/MochiAvatar';
 import FeedbackBubble from '../components/ui/FeedbackBubble';
 import InteractionPill from '../components/ui/InteractionPill';
 import ChatHistory from '../components/ui/ChatHistory';
+import ArrowLeft from '../components/ui/ArrowLeft';
 
 export default function ReinforcedLearning() {
   const [feedback, setFeedback] = useState("");
@@ -111,6 +112,8 @@ export default function ReinforcedLearning() {
 
   return (
     <div className="h-screen w-full flex bg-[#f0f9ff] overflow-hidden">
+
+      <ArrowLeft />
       
       {/* LEFT SIDE: HISTORY BAR */}
       <ChatHistory history={history} scrollRef={scrollRef} />

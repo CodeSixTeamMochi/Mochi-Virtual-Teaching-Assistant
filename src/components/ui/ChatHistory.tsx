@@ -8,7 +8,7 @@ interface ChatHistoryProps {
 
 export default function ChatHistory({ history, scrollRef }: ChatHistoryProps) {
     return (
-    <div className="w-80 bg-white/60 backdrop-blur-md border-r border-white/40 flex flex-col p-6 shadow-xl z-30">
+    <div className="w-80 bg-white/60 backdrop-blur-md border-r border-white/40 flex flex-col px-6 pb-6 pt-24 shadow-xl z-30">
       <h2 className="text-2xl font-bold text-slate-700 mb-6 flex items-center gap-2">
         <span>📜</span> Story So Far
       </h2>
