@@ -1,17 +1,19 @@
 import { useState } from "react";
-import { Phone, TriangleAlert, Pill, Plus, X, User } from "lucide-react";
+import { Phone, TriangleAlert, Pill, Plus, X, User, Trash2 } from "lucide-react";
 import { Student } from "@/Data/mockData.ts";
 
 interface Props {
   student: Student;
   onUpdate: (updated: Student) => void;
+  onDelete: (studentId: string) => void;
 }
 
-const StudentCard = ({ student, onUpdate }: Props) => {
+const StudentCard = ({ student, onUpdate, onDelete }: Props) => {
   const [newAllergy, setNewAllergy] = useState("");
   const [newMedicine, setNewMedicine] = useState("");
   const [addingAllergy, setAddingAllergy] = useState(false);
   const [addingMedicine, setAddingMedicine] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const handleCall = () => {
     // Format phone number - remove spaces and special characters
@@ -30,16 +32,34 @@ const StudentCard = ({ student, onUpdate }: Props) => {
     if (newAllergy.trim()) {
       onUpdate({ ...student, allergies: [...student.allergies, newAllergy.trim()] });
       setNewAllergy("");
-      setAddingAllergy(false);
+      // Keep the input open for adding more
+      // setAddingAllergy(false);
     }
+  };
+
+  const finishAddingAllergy = () => {
+    if (newAllergy.trim()) {
+      addAllergy();
+    }
+    setAddingAllergy(false);
+    setNewAllergy("");
   };
 
   const addMedicine = () => {
     if (newMedicine.trim()) {
       onUpdate({ ...student, medicines: [...student.medicines, newMedicine.trim()] });
       setNewMedicine("");
-      setAddingMedicine(false);
+      // Keep the input open for adding more
+      //setAddingMedicine(false);
     }
+  };
+
+  const finishAddingMedicine = () => {
+    if (newMedicine.trim()) {
+      addMedicine();
+    }
+    setAddingMedicine(false);
+    setNewMedicine("");
   };
 
   const removeAllergy = (index: number) => {
@@ -48,6 +68,11 @@ const StudentCard = ({ student, onUpdate }: Props) => {
 
   const removeMedicine = (index: number) => {
     onUpdate({ ...student, medicines: student.medicines.filter((_, i) => i !== index) });
+  };
+
+  const handleDelete = () => {
+    onDelete(student.id);
+    setShowDeleteConfirm(false);
   };
 
   return (
@@ -72,7 +97,36 @@ const StudentCard = ({ student, onUpdate }: Props) => {
         >
           <Phone className="h-4 w-4 text-call" />
         </button>
+        <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
+          >
+            <Trash2 className="h-4 w-4 text-destructive" />
+          </button>
       </div>
+      
+      {/* Delete Confirmation */}
+      {showDeleteConfirm && (
+        <div className="mb-4 rounded-lg border border-destructive/20 bg-destructive/5 p-3">
+          <p className="mb-2 text-sm text-card-foreground">
+            Are you sure you want to delete {student.name}'s health record?
+          </p>
+          <div className="flex gap-2">
+            <button
+              onClick={handleDelete}
+              className="rounded-md bg-destructive px-3 py-1.5 text-sm font-semibold text-destructive-foreground hover:opacity-90"
+            >
+              Delete
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="rounded-md bg-secondary px-3 py-1.5 text-sm font-semibold text-secondary-foreground hover:opacity-90"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Content grid */}
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -102,8 +156,16 @@ const StudentCard = ({ student, onUpdate }: Props) => {
                 <input
                   value={newAllergy}
                   onChange={(e) => setNewAllergy(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addAllergy()}
-                  placeholder="Type allergy..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addAllergy();
+                    } else if (e.key === "Escape") {
+                      finishAddingAllergy();
+                    }
+                  }}
+                  onBlur={finishAddingAllergy}
+                  placeholder="Type and press Enter..."
                   className="w-full rounded-md border border-input bg-card px-2 py-1 text-xs text-card-foreground outline-none focus:ring-1 focus:ring-ring"
                   autoFocus
                 />
@@ -145,8 +207,16 @@ const StudentCard = ({ student, onUpdate }: Props) => {
                 <input
                   value={newMedicine}
                   onChange={(e) => setNewMedicine(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && addMedicine()}
-                  placeholder="Type medicine..."
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      addMedicine();
+                    } else if (e.key === "Escape") {
+                      finishAddingMedicine();
+                    }
+                  }}
+                  onBlur={finishAddingMedicine}
+                  placeholder="Type and press Enter..."
                   className="w-full rounded-md border border-input bg-card px-2 py-1 text-xs text-card-foreground outline-none focus:ring-1 focus:ring-ring"
                   autoFocus
                 />

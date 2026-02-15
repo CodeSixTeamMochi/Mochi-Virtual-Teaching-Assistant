@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import EmergencyContacts from "@/components/EmergencyContacts";
@@ -6,12 +6,32 @@ import MedicationReminders from "@/components/MedicationReminders";
 import StudentHealthRecords from "@/components/StudentHealthRecords";
 import { emergencyContacts, students as initialStudents, Student } from "@/Data/mockData";
 
-const Index = () => {
-  const navigate = useNavigate();  
-  const [students, setStudents] = useState<Student[]>(initialStudents);
+const STORAGE_KEY = "mochi_student_health_data";
+
+const HealthData = () => {
+  const navigate = useNavigate();
+  
+  // Load from localStorage or use initial data
+  const [students, setStudents] = useState<Student[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    return saved ? JSON.parse(saved) : initialStudents;
+  });
+
+  // Save to localStorage whenever students change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(students));
+  }, [students]);
 
   const handleUpdateStudent = (updated: Student) => {
     setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+  };
+
+  const handleAddStudent = (newStudent: Student) => {
+    setStudents((prev) => [...prev, newStudent]);
+  };
+
+  const handleDeleteStudent = (studentId: string) => {
+    setStudents((prev) => prev.filter((s) => s.id !== studentId));
   };
 
   const handleBack = () => {
@@ -39,10 +59,15 @@ const Index = () => {
       <main className="mx-auto max-w-4xl space-y-4 p-4">
         <EmergencyContacts contacts={emergencyContacts} />
         <MedicationReminders />
-        <StudentHealthRecords students={students} onUpdateStudent={handleUpdateStudent} />
+        <StudentHealthRecords 
+        students={students} 
+        onUpdateStudent={handleUpdateStudent} 
+        onAddStudent={handleAddStudent}
+        onDeleteStudent={handleDeleteStudent}
+        />
       </main>
     </div>
   );
 };
 
-export default Index;
+export default HealthData;
