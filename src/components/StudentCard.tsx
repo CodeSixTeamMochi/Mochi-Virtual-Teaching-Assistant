@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Phone, TriangleAlert, Pill, Plus, X, User, Trash2 } from "lucide-react";
+import { Phone, TriangleAlert, Pill, Plus, X, User, Trash2, Pencil } from "lucide-react";
 import { Student } from "@/Data/mockData.ts";
 
 interface Props {
@@ -14,6 +14,9 @@ const StudentCard = ({ student, onUpdate, onDelete }: Props) => {
   const [addingAllergy, setAddingAllergy] = useState(false);
   const [addingMedicine, setAddingMedicine] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editName, setEditName] = useState(student.name);
+  const [editPhone, setEditPhone] = useState(student.parentPhone);
 
   const handleCall = () => {
     // Format phone number - remove spaces and special characters
@@ -26,6 +29,23 @@ const StudentCard = ({ student, onUpdate, onDelete }: Props) => {
     
     // Open dialer with the phone number
     window.location.href = `tel:${phoneWithCountryCode}`;
+  };
+
+  const handleSaveEdit = () => {
+    if (editName.trim() && editPhone.trim()) {
+      onUpdate({
+        ...student,
+        name: editName.trim(),
+        parentPhone: editPhone.trim(),
+      });
+      setIsEditing(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditName(student.name);
+    setEditPhone(student.parentPhone);
+    setIsEditing(false);
   };
 
   const addAllergy = () => {
@@ -83,26 +103,69 @@ const StudentCard = ({ student, onUpdate, onDelete }: Props) => {
           <div className="flex h-9 w-9 items-center justify-center rounded-full bg-secondary">
             <User className="h-4 w-4 text-muted-foreground" />
           </div>
-          <div>
-            <h3 className="font-semibold text-card-foreground">{student.name}</h3>
-            <p className="flex items-center gap-1 text-xs text-muted-foreground">
-              <Phone className="h-3 w-3" />
-              {student.parentPhone}
-            </p>
-          </div>
+          {isEditing ? (
+            <div className="flex-1 space-y-2">
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                placeholder="Student name"
+                className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-sm font-semibold text-card-foreground outline-none focus:ring-2 focus:ring-ring"
+              />
+              <input
+                type="tel"
+                value={editPhone}
+                onChange={(e) => setEditPhone(e.target.value)}
+                placeholder="Parent phone"
+                className="w-full rounded-md border border-input bg-background px-3 py-1.5 text-xs text-muted-foreground outline-none focus:ring-2 focus:ring-ring"
+              />
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSaveEdit}
+                  className="rounded-md bg-primary px-3 py-1 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                >
+                  Save
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  className="rounded-md bg-secondary px-3 py-1 text-xs font-semibold text-secondary-foreground hover:opacity-90"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div>
+              <h3 className="font-semibold text-card-foreground">{student.name}</h3>
+              <p className="flex items-center gap-1 text-xs text-muted-foreground">
+                <Phone className="h-3 w-3" />
+                {student.parentPhone}
+              </p>
+            </div>
+          )}
         </div>
-        <button
-          onClick={handleCall}
-          className="flex h-10 w-10 items-center justify-center rounded-full bg-call/10 transition-colors hover:bg-call/20"
-        >
-          <Phone className="h-4 w-4 text-call" />
-        </button>
-        <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
-          >
-            <Trash2 className="h-4 w-4 text-destructive" />
-          </button>
+        {!isEditing && (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setIsEditing(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 transition-colors hover:bg-primary/20"
+            >
+              <Pencil className="h-4 w-4 text-primary" />
+            </button>
+            <button
+              onClick={handleCall}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-call/10 transition-colors hover:bg-call/20"
+            >
+              <Phone className="h-4 w-4 text-call" />
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="flex h-10 w-10 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
+            >
+              <Trash2 className="h-4 w-4 text-destructive" />
+            </button>
+          </div>
+        )}
       </div>
       
       {/* Delete Confirmation */}
