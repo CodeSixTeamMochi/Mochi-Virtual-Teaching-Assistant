@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Bell, Plus, Pencil, Trash2, X } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, Plus, Pencil, Trash2, X, Eye, CheckCircle, Clock } from "lucide-react";
 import { MedicationReminder, Student } from "@/Data/mockData";
 import AddMedicationModal from "./AddMedicationModal";
 
@@ -9,6 +9,7 @@ interface Props {
   onAddMedication: (medication: MedicationReminder) => void;
   onUpdateMedication: (medication: MedicationReminder) => void;
   onDeleteMedication: (medicationId: string) => void;
+  onUpdateStatus: (medicationId: string, status: "pending" | "seen" | "completed") => void;
 }
 
 const MedicationReminders = ({ 
@@ -16,11 +17,19 @@ const MedicationReminders = ({
   students, 
   onAddMedication, 
   onUpdateMedication, 
-  onDeleteMedication 
+  onDeleteMedication,
+  onUpdateStatus 
 }: Props) => {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<MedicationReminder | null>(null);
+
+  // Request notification permission on component mount
+  useEffect(() => {
+    if (Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
 
   const handleEdit = (medication: MedicationReminder) => {
     setEditingId(medication.id);
@@ -38,6 +47,40 @@ const MedicationReminders = ({
   const handleCancelEdit = () => {
     setEditingId(null);
     setEditForm(null);
+  };
+
+  const handleMarkAsSeen = (medicationId: string) => {
+    onUpdateStatus(medicationId, "seen");
+  };
+
+  const handleMarkAsCompleted = (medicationId: string) => {
+    onUpdateStatus(medicationId, "completed");
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-notification/10 text-notification";
+      case "seen":
+        return "bg-primary/10 text-primary";
+      case "completed":
+        return "bg-success/10 text-success";
+      default:
+        return "bg-secondary";
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case "pending":
+        return <Clock className="h-4 w-4" />;
+      case "seen":
+        return <Eye className="h-4 w-4" />;
+      case "completed":
+        return <CheckCircle className="h-4 w-4" />;
+      default:
+        return null;
+    }
   };
 
   return (
@@ -161,12 +204,16 @@ const MedicationReminders = ({
                   </div>
                 ) : (
                   // View Mode
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="mb-2 flex items-center gap-2">
                         <h3 className="font-semibold text-card-foreground">{med.studentName}</h3>
-                        <span className="rounded-full bg-notification/10 px-2 py-0.5 text-xs font-medium" style={{ color: 'hsl(var(--notification))' }}>
+                        <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(med.status)}`}>
+                          {getStatusIcon(med.status)}
                           {med.time}
+                        </span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(med.status)}`}>
+                          {med.status.charAt(0).toUpperCase() + med.status.slice(1)}
                         </span>
                       </div>
                       <p className="text-sm text-card-foreground">
@@ -175,20 +222,52 @@ const MedicationReminders = ({
                       {med.notes && (
                         <p className="mt-1 text-xs text-muted-foreground">{med.notes}</p>
                       )}
+                      {med.seenAt && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Seen: {new Date(med.seenAt).toLocaleString()}
+                        </p>
+                      )}
+                      {med.completedAt && (
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Completed: {new Date(med.completedAt).toLocaleString()}
+                        </p>
+                      )}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => handleEdit(med)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 transition-colors hover:bg-primary/20"
-                      >
-                        <Pencil className="h-3.5 w-3.5 text-primary" />
-                      </button>
-                      <button
-                        onClick={() => onDeleteMedication(med.id)}
-                        className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
-                      >
-                        <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                      </button>
+                    <div className="flex flex-col gap-2">
+                      <div className="flex items-center gap-1">
+                        {med.status === "pending" && (
+                          <button
+                            onClick={() => handleMarkAsSeen(med.id)}
+                            className="flex h-8 items-center gap-1 rounded-full bg-primary/10 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                            title="Mark as Seen"
+                          >
+                            <Eye className="h-3.5 w-3.5" />
+                            Seen
+                          </button>
+                        )}
+                        {med.status === "seen" && (
+                          <button
+                            onClick={() => handleMarkAsCompleted(med.id)}
+                            className="flex h-8 items-center gap-1 rounded-full bg-success/10 px-3 text-xs font-medium text-success transition-colors hover:bg-success/20"
+                            title="Mark as Completed"
+                          >
+                            <CheckCircle className="h-3.5 w-3.5" />
+                            Done
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleEdit(med)}
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 transition-colors hover:bg-primary/20"
+                        >
+                          <Pencil className="h-3.5 w-3.5 text-primary" />
+                        </button>
+                        <button
+                          onClick={() => onDeleteMedication(med.id)}
+                          className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
+                        >
+                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 )}

@@ -29,6 +29,7 @@ const AddMedicationModal = ({ isOpen, onClose, onAdd, students }: Props) => {
         dosage: dosage.trim(),
         time,
         notes: notes.trim() || undefined,
+        status: "pending",
       };
       
       onAdd(newMedication);

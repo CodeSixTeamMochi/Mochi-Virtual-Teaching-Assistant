@@ -29,6 +29,50 @@ const HealthData = () => {
     localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(students));
   }, [students]);
 
+  // Save medications to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_MEDICATIONS, JSON.stringify(medications));
+  }, [medications]);
+
+  // Check for medication reminders and send notifications
+  useEffect(() => {
+    const checkMedications = () => {
+      const now = new Date();
+      const currentTime = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+      
+      medications.forEach((med) => {
+        if (med.time === currentTime && med.status === "pending") {
+          // Request notification permission if not granted
+          if (Notification.permission === "granted") {
+            new Notification("Medication Reminder", {
+              body: `${med.studentName} - ${med.medicationName} (${med.dosage})${med.notes ? '\n' + med.notes : ''}`,
+              icon: "/favicon.ico",
+              tag: med.id,
+            });
+          } else if (Notification.permission !== "denied") {
+            Notification.requestPermission().then((permission) => {
+              if (permission === "granted") {
+                new Notification("Medication Reminder", {
+                  body: `${med.studentName} - ${med.medicationName} (${med.dosage})${med.notes ? '\n' + med.notes : ''}`,
+                  icon: "/favicon.ico",
+                  tag: med.id,
+                });
+              }
+            });
+          }
+        }
+      });
+    };
+
+    // Check every minute
+    const interval = setInterval(checkMedications, 60000);
+    // Check immediately on mount
+    checkMedications();
+
+    return () => clearInterval(interval);
+  }, [medications]);
+
+
   const handleUpdateStudent = (updated: Student) => {
     setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   };
@@ -51,6 +95,24 @@ const HealthData = () => {
 
   const handleDeleteMedication = (medicationId: string) => {
     setMedications((prev) => prev.filter((m) => m.id !== medicationId));
+  };
+
+  const handleUpdateMedicationStatus = (medicationId: string, status: "pending" | "seen" | "completed") => {
+    setMedications((prev) => 
+      prev.map((m) => {
+        if (m.id === medicationId) {
+          const updated = { ...m, status };
+          if (status === "seen" && !m.seenAt) {
+            updated.seenAt = new Date().toISOString();
+          }
+          if (status === "completed" && !m.completedAt) {
+            updated.completedAt = new Date().toISOString();
+          }
+          return updated;
+        }
+        return m;
+      })
+    );
   };
 
   const handleBack = () => {
@@ -83,6 +145,7 @@ const HealthData = () => {
         onAddMedication={handleAddMedication}
         onUpdateMedication={handleUpdateMedication}
         onDeleteMedication={handleDeleteMedication}
+        onUpdateStatus={handleUpdateMedicationStatus}
         />
         <StudentHealthRecords 
         students={students} 

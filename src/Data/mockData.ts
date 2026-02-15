@@ -12,6 +12,9 @@ export interface MedicationReminder {
   dosage: string;
   time: string;
   notes?: string;
+  status: "pending" | "seen" | "completed";
+  seenAt?: string;
+  completedAt?: string;
 }
 
 export interface Student {
@@ -37,6 +40,7 @@ export const medicationReminders: MedicationReminder[] = [
     dosage: "5mg",
     time: "10:00",
     notes: "Take with food",
+    status: "pending",
   },
   {
     id: "med-2",
@@ -45,6 +49,8 @@ export const medicationReminders: MedicationReminder[] = [
     dosage: "2 puffs",
     time: "12:00",
     notes: "Before outdoor activities",
+    status: "seen",
+    seenAt: "2026-02-15T11:55:00",
   },
 ];
 
