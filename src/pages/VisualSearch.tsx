@@ -1,11 +1,9 @@
 import { useState, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import {
-  MochiGreeting,
-  VisualSearchBar,
-  SearchResultsPanel,
-  GenerateWithMochiPanel
-} from '@/components/mochi';
+import MochiGreeting from '@/components/mochi/MochiGreeting';
+import VisualSearchBar from '@/components/mochi/VisualSearchBar';
+import SearchResultsPanel from '@/components/mochi/SearchResultsPanel';
+import GenerateWithMochiPanel from '@/components/mochi/GenerateWithMochiPanel';
 import {
   getUnsplashResults,      
   generateAIContent,
