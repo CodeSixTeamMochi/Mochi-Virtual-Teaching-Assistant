@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { chatWithMochi, ChatMessage } from '../services/ReinforcedLearningService';
-import MochiAvatar from '../components/ui/MochiAvatar';
-import FeedbackBubble from '../components/ui/FeedbackBubble';
-import InteractionPill from '../components/ui/InteractionPill';
-import ChatHistory from '../components/ui/ChatHistory';
+import MochiAvatar from '../components/ReinforcedLearning/MochiAvatar';
+import FeedbackBubble from '../components/ReinforcedLearning/FeedbackBubble';
+import InteractionPill from '../components/ReinforcedLearning/InteractionPill';
+import ChatHistory from '../components/ReinforcedLearning/ChatHistory';
 import ArrowLeft from '../components/ui/ArrowLeft';
+import CorrectionCard from '../components/ReinforcedLearning/CorrectionCard';
+import { PHONETIC_DICTIONARY, getPhoneticBreakdown, WordData } from '@/services/PhoneticDictionary';
 
 export default function ReinforcedLearning() {
   const [feedback, setFeedback] = useState("");
@@ -16,6 +18,9 @@ export default function ReinforcedLearning() {
 
   const [history, setHistory] = useState<ChatMessage[]>([]); // Stores the chat messages
   const scrollRef = useRef<HTMLDivElement>(null); // Helps us scroll to the latest message
+
+  const [correctionData, setCorrectionData] = useState<{user: string, target: WordData} | null>(null);
+  const [mistakeList, setMistakeList] = useState<{user: string, target: WordData}[]>([]);
 
   const cleanTextForNaturalSpeech = (text) => {
     return text
@@ -74,6 +79,30 @@ export default function ReinforcedLearning() {
       const res = await chatWithMochi(blob, history);
       const { transcription, mochiResponse, mood: aiMood } = res;
 
+      const lowerText = (transcription || "").toLowerCase();
+      console.log("User said:", lowerText);
+
+      if (lowerText.includes("wabbit") || lowerText.includes("wed") || lowerText.includes("rabbit")) {
+
+        const targetWord = (lowerText.includes("wabbit") || lowerText.includes("rabbit")) ? "rabbit" : "red";
+        const breakdown = getPhoneticBreakdown(targetWord);
+
+        if (breakdown) {
+
+          console.log("Triggering Correction for:", targetWord);
+
+          const userMispronunciation = lowerText.includes("wed") ? "Wed" : "Wabbit";
+          setCorrectionData({ user: userMispronunciation, target: breakdown });
+
+          setMistakeList(prev => [...prev, { user: userMispronunciation, target: breakdown }]);
+
+          setFeedback("Let's try that one again!");
+          setMood("ENCOURAGING");
+          setIsThinking(false);
+          return;
+        }
+      }
+
       setHistory(prev => [
         ...prev, 
         { role: 'child', text: transcription || "I was talking!" }, 
@@ -109,12 +138,21 @@ export default function ReinforcedLearning() {
       setIsThinking(false);
     }
   };
-
+  
+  const playCorrectionAudio = (text: string, rate: number) => {
+    const synth = window.speechSynthesis;
+    synth.cancel(); // Stops any currently playing audio
+    const u = new SpeechSynthesisUtterance(text);
+    u.rate = rate;  // 1.0 is normal speed, 0.5 is slow mode
+    u.pitch = 1.1;
+    synth.speak(u);
+  };
+  
   return (
     <div className="h-screen w-full flex bg-[#f0f9ff] overflow-hidden">
 
       <ArrowLeft />
-      
+    
       {/* LEFT SIDE: HISTORY BAR */}
       <ChatHistory history={history} scrollRef={scrollRef} />
 
@@ -129,11 +167,17 @@ export default function ReinforcedLearning() {
                 isThinking={isThinking} 
               />
 
-              <div className="w-full flex justify-center items-start min-h-[2rem]">
-                <FeedbackBubble 
-                  feedback={feedback} 
-                  mood={mood} 
-                />
+              <div className="w-full flex justify-center items-start min-h-[4rem]">
+                {correctionData ? (
+                  <CorrectionCard 
+                    userWord={correctionData.user}
+                    targetData={correctionData.target}
+                    onPlayReference={() => playCorrectionAudio(correctionData.target.word, 1.0)}
+                    onPlaySlow={() => playCorrectionAudio(correctionData.target.word, 0.5)}
+                  />
+                ) : (
+                  <FeedbackBubble feedback={feedback} mood={mood} />
+                )}
               </div>
 
             </div>

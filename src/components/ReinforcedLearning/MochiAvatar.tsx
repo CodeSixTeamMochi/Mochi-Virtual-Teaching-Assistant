@@ -1,4 +1,5 @@
 import React from 'react';
+import mochiWavingGif from '../../assets/mochi_waving.gif';
 
 interface MochiAvatarProps {
   mood: string;
@@ -10,7 +11,7 @@ export default function MochiAvatar({ mood, isThinking }: MochiAvatarProps) {
         <div className="flex-1 flex flex-col items-center justify-center">
             <div className="relative">
                 <img 
-                src="/mochi_waving.gif" 
+                src={mochiWavingGif} 
                 alt="Mochi" 
                 className={`w-96 h-96 object-contain transition-all duration-700
                     ${mood === 'CELEBRATING' ? 'scale-110 drop-shadow-[0_0_50px_rgba(250,204,21,0.6)] -translate-y-4' : ''}
