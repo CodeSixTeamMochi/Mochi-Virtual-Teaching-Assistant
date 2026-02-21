@@ -47,6 +47,7 @@ export default function ReinforcedLearning() {
 
   // FUNCTION: Start Recording Audio
   const startRecording = async () => {
+    setCorrectionData(null);
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     mediaRecorder.current = new MediaRecorder(stream);
     audioChunks.current = [];
@@ -159,6 +160,17 @@ export default function ReinforcedLearning() {
       {/* RIGHT SIDE: MOCHI INTERACTION */}
       <div className="flex-1 h-screen flex flex-col items-center justify-center p-6 relative">
 
+        {/* FLOATING CORRECTION WIDGET*/}
+        {correctionData && (
+          <div className="absolute top-1/4 right-8 z-[100] hidden lg:block">
+            <CorrectionCard 
+              userWord={correctionData.user} 
+              targetData={correctionData.target}
+              onClose={() => setCorrectionData(null)}
+            />
+          </div>
+        )}
+
         <div className="flex flex-col items-center justify-center w-full max-w-2xl gap-5 transition-all duration-500">
             
             <div className="transform scale-100 transition-transform duration-700">
@@ -168,21 +180,12 @@ export default function ReinforcedLearning() {
               />
 
               <div className="w-full flex justify-center items-start min-h-[4rem]">
-                {correctionData ? (
-                  <CorrectionCard 
-                    userWord={correctionData.user}
-                    targetData={correctionData.target}
-                    onPlayReference={() => playCorrectionAudio(correctionData.target.word, 1.0)}
-                    onPlaySlow={() => playCorrectionAudio(correctionData.target.word, 0.5)}
-                  />
-                ) : (
-                  <FeedbackBubble feedback={feedback} mood={mood} />
-                )}
+                <FeedbackBubble feedback={feedback} mood={mood} />
               </div>
 
             </div>
 
-            <div className="w-full flex justify-center">
+            <div className="w-full flex justify-center mt-4">
               <InteractionPill 
                 isThinking={isThinking}
                 isRecording={isRecording}
