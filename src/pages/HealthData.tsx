@@ -4,10 +4,18 @@ import { ArrowLeft } from "lucide-react";
 import EmergencyContacts from "@/components/EmergencyContacts";
 import MedicationReminders from "@/components/MedicationReminders";
 import StudentHealthRecords from "@/components/StudentHealthRecords";
-import { emergencyContacts, students as initialStudents, medicationReminders as initialReminders, Student, MedicationReminder } from "@/Data/mockData";
+import { 
+  emergencyContacts as initialEmergencyContacts, 
+  students as initialStudents, 
+  medicationReminders as initialReminders, 
+  Student, 
+  MedicationReminder,
+  EmergencyContact,} 
+  from "@/Data/mockData";
 
 const STORAGE_KEY_STUDENTS = "mochi_student_health_data";
 const STORAGE_KEY_MEDICATIONS = "mochi_medication_reminders";
+const STORAGE_KEY_EMERGENCY = "mochi_emergency_contacts";
 
 const HealthData = () => {
   const navigate = useNavigate();
@@ -24,6 +32,12 @@ const HealthData = () => {
     return saved ? JSON.parse(saved) : initialReminders;
   });
 
+  // Load emergency contacts from localStorage or use initial data
+  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>(() => {
+    const saved = localStorage.getItem(STORAGE_KEY_EMERGENCY);
+    return saved ? JSON.parse(saved) : initialEmergencyContacts;
+  });
+
   // Save to localStorage whenever students change
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(students));
@@ -33,6 +47,11 @@ const HealthData = () => {
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_MEDICATIONS, JSON.stringify(medications));
   }, [medications]);
+
+  // Save emergency contacts to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY_EMERGENCY, JSON.stringify(emergencyContacts));
+  }, [emergencyContacts]);
 
   // Check for medication reminders and send notifications
   useEffect(() => {
@@ -115,6 +134,18 @@ const HealthData = () => {
     );
   };
 
+  const handleUpdateEmergencyContact = (updated: EmergencyContact) => {
+    setEmergencyContacts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+  };
+
+  const handleAddEmergencyContact = (newContact: EmergencyContact) => {
+    setEmergencyContacts((prev) => [...prev, newContact]);
+  };
+
+  const handleDeleteEmergencyContact = (contactId: string) => {
+    setEmergencyContacts((prev) => prev.filter((c) => c.id !== contactId));
+  };
+
   const handleBack = () => {
     navigate(-1); // Go back to previous page
   };
@@ -138,20 +169,25 @@ const HealthData = () => {
 
       {/* Content */}
       <main className="mx-auto max-w-4xl space-y-4 p-4">
-        <EmergencyContacts contacts={emergencyContacts} />
+        <EmergencyContacts 
+          contacts={emergencyContacts}
+          onUpdateContact={handleUpdateEmergencyContact}
+          onAddContact={handleAddEmergencyContact}
+          onDeleteContact={handleDeleteEmergencyContact}
+        />
         <MedicationReminders 
-        medications={medications}
-        students={students}
-        onAddMedication={handleAddMedication}
-        onUpdateMedication={handleUpdateMedication}
-        onDeleteMedication={handleDeleteMedication}
-        onUpdateStatus={handleUpdateMedicationStatus}
+          medications={medications}
+          students={students}
+          onAddMedication={handleAddMedication}
+          onUpdateMedication={handleUpdateMedication}
+          onDeleteMedication={handleDeleteMedication}
+          onUpdateStatus={handleUpdateMedicationStatus}
         />
         <StudentHealthRecords 
-        students={students} 
-        onUpdateStudent={handleUpdateStudent} 
-        onAddStudent={handleAddStudent}
-        onDeleteStudent={handleDeleteStudent}
+          students={students} 
+          onUpdateStudent={handleUpdateStudent} 
+          onAddStudent={handleAddStudent}
+          onDeleteStudent={handleDeleteStudent}
         />
       </main>
     </div>
