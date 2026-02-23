@@ -24,7 +24,7 @@ export default function InteractionPill({
             `}>
         
                 <p className="text-base text-slate-400 font-medium italic">
-                    {isThinking ? "Mochi is thinking..." : isRecording ? "Listening to you..." : "Tap the mic to talk to Mochi"}
+                    {isThinking ? "Mochi is thinking..." : isRecording ? "Listening to you..." : "Tap the mic or say 'Hey Mochi!'"}
                 </p>
 
                 <button

@@ -13,6 +13,7 @@ export default function ReinforcedLearning() {
   const [mood, setMood] = useState<string>("HAPPY");
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorder = useRef(null);
+  const wakeWordRecognition = useRef<any>(null);
   const audioChunks = useRef<BlobPart[]>([]);
   const [isThinking, setIsThinking] = useState(false);
 
@@ -44,6 +45,72 @@ export default function ReinforcedLearning() {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [history]);
+
+  //"HEY MOCHI" Wake Word Function
+  React.useEffect(() => {
+
+    //Check for browser support
+    const SpeechRecognition = (window as any).window.SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      console.warn("Browser does not support Speech Recognition API");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+    recognition.onresult = (event: any) => {
+      const lastResultIndex = event.results.length - 1;
+      const transcript = event.results[lastResultIndex][0].transcript.toLowerCase();
+
+      console.log("Background Listener Heard:", transcript);
+
+      //The trigger word is "Hey Mochi"
+      if (transcript.includes("hey mochi")) {
+        console.log("Wake word detected!");
+
+        recognition.stop(); // Stop listening to prevent overlap with main recording
+
+        setFeedback("Yes? I'm listening! ✨");
+        setMood("HAPPY");
+
+        //Wait half a second before starting the main recording 
+        setTimeout(() => {
+         startRecording();
+        }, 500);
+      }
+    };
+
+
+    //Automatically restart the wake word listener if it stops and we're not currently recording or processing
+    recognition.onend = () => {
+      if (!isRecording && !isThinking) {
+        try {
+          recognition.start(); // Restart the wake word listener
+        } catch (err) {
+          console.error("Error restarting wake word recognition:", err);
+        }
+      }
+    };
+
+    wakeWordRecognition.current = recognition;
+
+    if (!isRecording && !isThinking) {
+      try {
+        recognition.start();
+      } catch (err) {
+        console.error("Error starting wake word recognition:", err);
+      }
+    }
+
+    return () => {
+      recognition.stop();
+    };
+
+  }, [isRecording, isThinking]);
 
   // FUNCTION: Start Recording Audio
   const startRecording = async () => {
@@ -83,9 +150,9 @@ export default function ReinforcedLearning() {
       const lowerText = (transcription || "").toLowerCase();
       console.log("User said:", lowerText);
 
-      if (lowerText.includes("wabbit") || lowerText.includes("wed") || lowerText.includes("rabbit")) {
+      if (lowerText.includes("wabbit") || lowerText.includes("wed")) {
 
-        const targetWord = (lowerText.includes("wabbit") || lowerText.includes("rabbit")) ? "rabbit" : "red";
+        const targetWord = lowerText.includes("wabbit") ? "rabbit" : "red";
         const breakdown = getPhoneticBreakdown(targetWord);
 
         if (breakdown) {
