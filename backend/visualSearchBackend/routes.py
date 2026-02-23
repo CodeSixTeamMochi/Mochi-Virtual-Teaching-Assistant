@@ -1,5 +1,5 @@
 from flask import Blueprint, request, jsonify
-from services.gemini_service import generate_ai_image
+from visualSearchBackend.services.gemini_service import generate_ai_image
 
 # We create a Blueprint so our routes are organized
 api_bp = Blueprint('api', __name__)

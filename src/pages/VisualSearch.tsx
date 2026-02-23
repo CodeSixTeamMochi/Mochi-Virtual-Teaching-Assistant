@@ -5,7 +5,7 @@ import VisualSearchBar from '@/components/mochi/VisualSearchBar';
 import SearchResultsPanel from '@/components/mochi/SearchResultsPanel';
 import GenerateWithMochiPanel from '@/components/mochi/GenerateWithMochiPanel';
 import {
-  getUnsplashResults,      
+  //getUnsplashResults,      
   generateAIContent,
   type VisualResult,      
   type GeneratedContent   
@@ -28,7 +28,7 @@ const VisualSearch = () => {
   const [showResults, setShowResults] = useState(false);
 
   /**
-   * Handle search action (Connects to Unsplash API)
+   * Handle search action (Connects to Google Search API)
    */
   const handleSearch = useCallback(async (query: string) => {
     if (!query.trim()) return;
@@ -38,16 +38,6 @@ const VisualSearch = () => {
     setHasSearched(true);
     setShowResults(true);
 
-    try {
-      // Replaced Google search with Unsplash search
-      const results = await getUnsplashResults(query); 
-      setSearchResults(results);
-    } catch (error) {
-      console.error('Unsplash search error:', error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
-    }
   }, []);
 
   /**
@@ -103,8 +93,7 @@ const VisualSearch = () => {
     setGeneratedContent(null);
   }, []);
 
-  // Home view with greeting
-  // --- UI RENDERING (UNTOUCHED) ---
+  /// Home view with greeting
   if (!showResults) {
     return (
       <div className="min-h-screen bg-sky-50 flex flex-col relative">
@@ -119,14 +108,14 @@ const VisualSearch = () => {
 
         {/* Centered content */}
         <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20">
-          <MochiGreeting greeting="Hello! Good Morning" />
+          <MochiGreeting/>
           
-          <div className="mt-8 w-full max-w-3xl">
+          <div className="mt-6 w-full max-w-3xl">
             <VisualSearchBar
               onSearch={handleSearch}
               onGenerateWithAI={handleGenerateWithAI}
               isLoading={isSearching || isGenerating}
-              placeholder="Search photos"
+              placeholder="What should Mochi find for you today?"
             />
           </div>
         </div>

@@ -13,7 +13,7 @@ class Config:
     SECRET_KEY = os.environ.get('SECRET_KEY', 'mochi-super-secret-key-2026')
     
     # API Keys (Mapping VITE_ names from .env to internal Config names)
-    GEMINI_API_KEY = os.environ.get('VITE_GEMINI_API_KEY')
+    GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
     
     
     # Flask settings
@@ -29,8 +29,8 @@ class Config:
     def check_env():
         """Optional helper to alert you if keys are missing on startup."""
         missing = []
-        if not os.environ.get('VITE_GEMINI_API_KEY'): missing.append("VITE_GEMINI_API_KEY")
-        if not os.environ.get('VITE_UNSPLASH_ACCESS_KEY'): missing.append("VITE_UNSPLASH_ACCESS_KEY")
+        if not os.environ.get('GEMINI_API_KEY'): missing.append("GEMINI_API_KEY")
+        if not os.environ.get('UNSPLASH_ACCESS_KEY'): missing.append("UNSPLASH_ACCESS_KEY")
         
         if missing:
             print(f"Mochi Warning: Missing environment variables: {', '.join(missing)}")

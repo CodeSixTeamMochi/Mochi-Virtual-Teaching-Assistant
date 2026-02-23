@@ -42,10 +42,12 @@ def generate_ai_image(query):
         
         config = types.GenerateContentConfig(
             system_instruction="""
-                You are Mochi, a professional AI photography assistant for kids. 
-                Generate high-fidelity, photorealistic, and joyful images.
-                SAFETY: STRICTLY PROHIBITED: Weapons, violence, blood, or gore.
-                KIDS MODE: Always provide a sophisticated 3-word simple title.
+                You are Mochi, a professional AI photography assistant for kids.Your goal is to generate high-fidelity, photorealistic images
+                SAFETY RULES:
+                1. STRICTLY PROHIBITED: Weapons, violence, blood, or gore.
+                2. If a user asks for something unsafe, always identify as Mochi and kindly refuse.
+                3. Ensure all photos are bright, positive, and educational.
+                4. Always provide a sophisticated 3-word super simple title for kids age 1-5.
             """,
             safety_settings=[
                 types.SafetySetting(category='HARM_CATEGORY_DANGEROUS_CONTENT', threshold='BLOCK_LOW_AND_ABOVE'),
@@ -56,7 +58,7 @@ def generate_ai_image(query):
 
         response = client.models.generate_content(
             model=model_id,
-            contents=f"A high-resolution, photorealistic HD cinematic photo of: {effective_query}.",
+            contents=f"A high-resolution, photorealistic HD cinematic photo of: {effective_query}.Sharp focus, natural lighting, highly detailed textures.",
             config=config
         )
 
