@@ -152,23 +152,24 @@ const HealthData = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-10 border-b border-border bg-card px-4 py-3 shadow-sm">
-        <div className="mx-auto flex max-w-4xl items-center gap-3">
+      {/* Header - Fullscreen */}
+      <header className="sticky top-0 z-10 border-b border-border bg-card px-8 py-4 shadow-sm">
+        <div className="flex items-center gap-4">
           <button 
-          onClick={handleBack}
-          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-secondary">
+            onClick={handleBack}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-accent"
+          >
             <ArrowLeft className="h-5 w-5" />
           </button>
           <div>
-            <h1 className="text-lg font-bold text-card-foreground">Health Information</h1>
-            <p className="text-xs text-muted-foreground">Student Health and Emergency Data</p>
+            <h1 className="text-2xl font-semibold text-card-foreground">Health Information</h1>
+            <p className="text-sm text-muted-foreground">Student Health and Emergency Data</p>
           </div>
         </div>
       </header>
 
-      {/* Content */}
-      <main className="mx-auto max-w-4xl space-y-4 p-4">
+      {/* Content - Fullscreen with padding */}
+      <main className="space-y-6 px-8 py-6">
         <EmergencyContacts 
           contacts={emergencyContacts}
           onUpdateContact={handleUpdateEmergencyContact}

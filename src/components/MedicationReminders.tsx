@@ -100,8 +100,7 @@ const MedicationReminders = ({
           </div>
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 rounded-lg bg-notification px-3 py-2 text-sm font-semibold transition-opacity hover:opacity-90"
-            style={{ color: 'hsl(var(--notification-foreground))' }}
+            className="flex items-center gap-2 rounded-lg bg-notification px-6 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-90"
           >
             <Plus className="h-4 w-4" />
             Add
@@ -238,20 +237,20 @@ const MedicationReminders = ({
                         {med.status === "pending" && (
                           <button
                             onClick={() => handleMarkAsSeen(med.id)}
-                            className="flex h-8 items-center gap-1 rounded-full bg-primary/10 px-3 text-xs font-medium text-primary transition-colors hover:bg-primary/20"
+                            className="flex items-center gap-2 rounded-full bg-primary/10 px-6 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
                             title="Mark as Seen"
                           >
-                            <Eye className="h-3.5 w-3.5" />
+                            <Eye className="h-4 w-4" />
                             Seen
                           </button>
                         )}
                         {med.status === "seen" && (
                           <button
                             onClick={() => handleMarkAsCompleted(med.id)}
-                            className="flex h-8 items-center gap-1 rounded-full bg-success/10 px-3 text-xs font-medium text-success transition-colors hover:bg-success/20"
+                            className="flex items-center gap-2 rounded-full bg-success/10 px-6 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20"
                             title="Mark as Completed"
                           >
-                            <CheckCircle className="h-3.5 w-3.5" />
+                            <CheckCircle className="h-4 w-4" />
                             Done
                           </button>
                         )}

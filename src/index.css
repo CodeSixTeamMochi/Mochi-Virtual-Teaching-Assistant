@@ -158,7 +158,9 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -227,6 +229,10 @@
 }
 
 @layer utilities {
+  .font-inter {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  
   .font-nunito {
     font-family: 'Nunito', sans-serif;
   }

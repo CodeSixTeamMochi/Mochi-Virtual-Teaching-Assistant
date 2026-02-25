@@ -76,33 +76,33 @@ const EmergencyContacts = ({ contacts, onUpdateContact, onAddContact, onDeleteCo
             </div>
           </div>
           {!isEditing ? (
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
               >
                 <Plus className="h-4 w-4" />
                 Add
               </button>
               <button
                 onClick={handleEditClick}
-                className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
               >
                 <Pencil className="h-4 w-4" />
                 Edit
               </button>
             </div>
           ) : (
-            <div className="flex gap-2">
+            <div className="flex gap-3">
               <button
                 onClick={handleSave}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+                className="rounded-lg bg-primary px-8 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
               >
                 Save
               </button>
               <button
                 onClick={handleCancel}
-                className="rounded-lg bg-secondary px-4 py-2 text-sm font-semibold text-secondary-foreground transition-opacity hover:opacity-90"
+                className="rounded-lg bg-secondary px-8 py-2 text-sm font-semibold text-secondary-foreground transition-opacity hover:opacity-90"
               >
                 Cancel
               </button>

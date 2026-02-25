@@ -38,20 +38,20 @@ const StudentHealthRecords = ({ students, onUpdateStudent, onAddStudent, onDelet
             <p className="text-sm text-muted-foreground">Manage health information for {students.length} students</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search"
-              className="h-9 rounded-lg border border-input bg-secondary/50 pl-9 pr-3 text-sm text-card-foreground outline-none focus:ring-1 focus:ring-ring"
+              className="h-9 w-64 rounded-lg border border-input bg-secondary/50 pl-10 pr-3 text-sm text-card-foreground outline-none focus:ring-1 focus:ring-ring"
             />
           </div>
           <select
             value={selectedClass}
             onChange={(e) => setSelectedClass(e.target.value)}
-            className="h-9 rounded-lg border border-input bg-secondary/50 px-3 text-sm text-card-foreground outline-none focus:ring-1 focus:ring-ring"
+            className="h-9 w-40 rounded-lg border border-input bg-secondary/50 px-3 text-sm text-card-foreground outline-none focus:ring-1 focus:ring-ring"
           >
             {classOptions.map((c) => (
               <option key={c} value={c}>
@@ -61,7 +61,7 @@ const StudentHealthRecords = ({ students, onUpdateStudent, onAddStudent, onDelet
           </select>
           <button
               onClick={() => setIsAddModalOpen(true)}
-              className="flex items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
             >
               <Plus className="h-4 w-4" />
               Add
