@@ -13,6 +13,7 @@ export default function ReinforcedLearning() {
   const [mood, setMood] = useState<string>("HAPPY");
   const [isRecording, setIsRecording] = useState(false);
   const mediaRecorder = useRef(null);
+  const audioContextRef = useRef<any>(null);
   const wakeWordRecognition = useRef<any>(null);
   const audioChunks = useRef<BlobPart[]>([]);
   const [isThinking, setIsThinking] = useState(false);
@@ -57,10 +58,14 @@ export default function ReinforcedLearning() {
       return;
     }
 
-    const recognition = new SpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = false;
-    recognition.lang = 'en-US';
+    if (!wakeWordRecognition.current) {
+      wakeWordRecognition.current = new SpeechRecognition();
+      wakeWordRecognition.current.continuous = true;
+      wakeWordRecognition.current.interimResults = false;
+      wakeWordRecognition.current.lang = 'en-US';
+    }
+
+    const recognition = wakeWordRecognition.current;
 
     recognition.onresult = (event: any) => {
       const lastResultIndex = event.results.length - 1;
@@ -69,7 +74,7 @@ export default function ReinforcedLearning() {
       console.log("Background Listener Heard:", transcript);
 
       //The trigger word is "Hey Mochi"
-      if (transcript.includes("hey mochi")) {
+      if (transcript.includes("hey mochi") || transcript.includes("hi mochi")) {
         console.log("Wake word detected!");
 
         recognition.stop(); // Stop listening to prevent overlap with main recording
@@ -84,57 +89,152 @@ export default function ReinforcedLearning() {
       }
     };
 
-
     //Automatically restart the wake word listener if it stops and we're not currently recording or processing
     recognition.onend = () => {
       if (!isRecording && !isThinking) {
-        try {
-          recognition.start(); // Restart the wake word listener
-        } catch (err) {
-          console.error("Error restarting wake word recognition:", err);
-        }
+        setTimeout(() => {
+
+          try { 
+            recognition.start(); 
+          } catch (e) {}
+        }, 400);
       }
     };
 
-    wakeWordRecognition.current = recognition;
-
     if (!isRecording && !isThinking) {
-      try {
-        recognition.start();
-      } catch (err) {
-        console.error("Error starting wake word recognition:", err);
-      }
+      setTimeout(() => {
+        try {
+          recognition.start();
+        } catch (e) {}
+      }, 400);
+    } else {
+      try { 
+        recognition.stop(); 
+      } catch (e) {}
     }
 
+    // Cleanup when component re-renders
     return () => {
-      recognition.stop();
+      recognition.onresult = null;
+      recognition.onend = null;
+      try { 
+        recognition.stop(); 
+      } catch(e) {}
     };
 
   }, [isRecording, isThinking]);
 
   // FUNCTION: Start Recording Audio
   const startRecording = async () => {
+
+    if (wakeWordRecognition.current) {
+      wakeWordRecognition.current.onend = null; // Stop it from auto-restarting
+      try { 
+        wakeWordRecognition.current.stop(); 
+      } catch(e) {}
+    }
+
+    // Clear any previous correction data when starting a new recording session
     setCorrectionData(null);
+
+    // Request access to the microphone
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    mediaRecorder.current = new MediaRecorder(stream);
+
+    // Set up the MediaRecorder to capture audio
+    mediaRecorder.current = new MediaRecorder(stream) as any;
     audioChunks.current = [];
 
-    mediaRecorder.current.ondataavailable = (e) => {
+    // When audio data is available, save it to the chunks array
+    mediaRecorder.current.ondataavailable = (e: any) => {
       audioChunks.current.push(e.data);
     };
 
+    // When recording stops, create a Blob from the audio chunks and send it to Backend
     mediaRecorder.current.onstop = async () => {
       const audioBlob = new Blob(audioChunks.current, { type: 'audio/webm' });
       sendAudioToMochi(audioBlob);
     };
 
+    // Start recording 
     mediaRecorder.current.start();
     setIsRecording(true);
+
+    //Silence Detection Logic: Stop recording after 1.5s of silence
+
+    // Set up the AudioContext and AnalyserNode to monitor the audio stream
+    const AudioContext = (window as any).AudioContext || (window as any).webkitAudioContext;
+    const audioContext = new AudioContext();
+    audioContextRef.current = audioContext;
+
+    const analyser = audioContext.createAnalyser();
+    const source = audioContext.createMediaStreamSource(stream);
+    source.connect(analyser); // Connect the mic to the analyser
+
+    // fftSize determines how detailed the audio analysis is. 512 is standard for voice detection
+    analyser.fftSize = 512;
+    const bufferLength = analyser.frequencyBinCount;
+
+    // Create an empty array to hold the volume data
+    const dataArray = new Uint8Array(bufferLength);
+
+    // Variables to track the child's speaking state
+    let silenceStart = Date.now();
+    let hasSpoken = false;
+    let animationFrameId: number;
+
+    // The main loop that run 60 times per second to check the volume levels
+    const detectSilence = () => {
+      // If we manually stopped, exit the loop
+      if (mediaRecorder.current?.state !== 'recording') return;
+
+      // Fill the dataArray with the current volume levels from the microphone
+      analyser.getByteFrequencyData(dataArray);
+
+      // Calculate the average volume of the room by adding up all frequencies
+      let sum = 0;
+      for (let i = 0; i < bufferLength; i++) {
+        sum += dataArray[i];
+      }
+      const averageVolume = sum / bufferLength;
+
+      // Sensitivity scale: We can adjust this threshold for testing in different environments
+      // This is the average volume that counts as "Talking". This depends on the noice levels of the environment
+      const volumeThreshold = 10;
+
+      if (averageVolume > volumeThreshold) {
+        hasSpoken = true; //The child has started speaking
+        silenceStart = Date.now(); //Reset the silence timer
+      } else {
+        // If they HAVE spoken, and have now been silent for 1.5 seconds (1500ms), we stop the recording
+        if (hasSpoken && (Date.now() - silenceStart > 1500)) {
+          console.log("🛑 Silence detected! Auto-stopping microphone.");
+          stopRecording(); // Stop the recording
+          cancelAnimationFrame(animationFrameId);
+          return; // Exit the loop to prevent multiple stops
+        }
+      }
+
+      // Keep looping and checking the volume
+      animationFrameId = requestAnimationFrame(detectSilence);
+    };
+
+    // Start the silence detection loop
+    detectSilence(); 
   };
 
+  // FUNCTION: Stop Recording Audio 
   const stopRecording = () => {
-    mediaRecorder.current.stop();
+    if (mediaRecorder.current && mediaRecorder.current.state === 'recording') {
+      mediaRecorder.current.stop();
+    }
     setIsRecording(false);
+
+    // Shut down the silence detector to save CPU
+    // If this is not closed, the browser will keep analyzing the mic input in the background, which can cause performance issues and battery drain
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
   };
 
   // FUNCTION: Send Audio File to Backend
