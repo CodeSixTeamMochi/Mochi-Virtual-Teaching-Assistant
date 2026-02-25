@@ -314,7 +314,7 @@ export const generateLessonWithAI = async (
     const formData: LessonFormData = {
       title: data.title,
       description: data.description,
-      coverImage: data.items[0]?.image || '',
+      coverImage: data.coverImage || '',
       items: data.items.map((item: any) => ({
         name: item.name,
         spokenText: item.spokenText,
