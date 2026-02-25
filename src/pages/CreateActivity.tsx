@@ -1,456 +1,376 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Upload, Camera, Volume2, RotateCcw, ArrowRight, Save, Eye, FileText, FileEdit, Sparkles, X } from "lucide-react";
+import { 
+  ArrowLeft, 
+  Upload, 
+  Save, 
+  FileEdit, 
+  Sparkles, 
+  X, 
+  Plus, 
+  ChevronRight, 
+  Loader2,
+  CheckCircle,
+  Circle
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
-import MochiAvatar from "@/components/game/MochiAvatar";
+import localforage from "localforage";
 
 type TemplateMode = "select" | "ai" | "custom";
 
-interface RecentActivity {
-  id: string;
-  name: string;
-  className: string;
-  status: "completed" | "pending";
+interface ImageOption {
+  image: string | null;
+  label: string;
+}
+
+interface QuestionData {
+  gameTitle: string;
+  questionText: string;
+  options: ImageOption[];
+  correctOptionIndex: number;
 }
 
 const CreateActivity = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<TemplateMode>("select");
-  const [showModeDialog, setShowModeDialog] = useState(true);
   
-  // AI Template state
+  // Dialog States
+  const [showModeDialog, setShowModeDialog] = useState(true);
+  const [showAiDialog, setShowAiDialog] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  // AI Input States
+  const [gameTopic, setGameTopic] = useState("");
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   
-  // Custom Template state
-  const [lessonName, setLessonName] = useState("Lesson name");
-  const [currentStep, setCurrentStep] = useState(1);
-  const [totalSteps] = useState(3);
-  const [answerText, setAnswerText] = useState("");
-  const [answerImage, setAnswerImage] = useState<string | null>(null);
-  
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const imageInputRef = useRef<HTMLInputElement>(null);
+  // Game Data States
+  const [questions, setQuestions] = useState<QuestionData[]>([
+    {
+      gameTitle: "",
+      questionText: "",
+      options: [
+        { image: null, label: "" },
+        { image: null, label: "" },
+        { image: null, label: "" },
+      ],
+      correctOptionIndex: 0,
+    },
+  ]);
+  const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
+  const imageInputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null]);
+  const currentQuestion = questions[currentQuestionIndex];
 
-  // Mock recent activities
-  const recentActivities: RecentActivity[] = [
-    { id: "1", name: "Fruits", className: "Class A", status: "completed" },
-    { id: "2", name: "Numbers", className: "Class A", status: "pending" },
-  ];
+  // 1. Handle AI Generation Trigger (Updated to fix Correct Answer Bug)
+  const handleGenerate = async () => {
+    if (!gameTopic || !subject || !description) {
+      alert("Please fill in the Theme, Learning Goal, and Mochi's Instructions!");
+      return;
+    }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setUploadedFile(file);
+    setIsGenerating(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ gameTopic, subject, description })
+      });
+
+      if (!response.ok) throw new Error("Failed to generate content");
+
+      const data = await response.json();
+      
+      const populatedQuestions: QuestionData[] = data.map((aiQ: any) => {
+        // Find which option matches the AI's correct answer text
+        const correctIndex = aiQ.options.findIndex((opt: any) => opt.label === aiQ.correct_answer);
+
+        return {
+          gameTitle: aiQ.gameTitle || gameTopic,
+          questionText: aiQ.questionText || "Look at the picture!",
+          options: aiQ.options.map((opt: any) => ({
+            label: opt.label,
+            image: opt.image || null 
+          })),
+          // Set to the actual correct index, or fallback to 0 if something went wrong
+          correctOptionIndex: correctIndex !== -1 ? correctIndex : 0 
+        };
+      });
+
+      setQuestions(populatedQuestions);
+      setCurrentQuestionIndex(0); 
+      setIsGenerating(false);
+      setShowAiDialog(false); 
+      setMode("custom"); 
+
+    } catch (error) {
+      console.error("AI Generation Error:", error);
+      setIsGenerating(false);
+      alert("Mochi had trouble finding those photos. Please check your backend terminal!");
     }
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // 2. Handle Final Save using LocalForage (Bypasses 5MB limit)
+  const handleSave = async () => {
+    try {
+      const title = questions[0].gameTitle || gameTopic || "Custom Game";
+      
+      const formattedQuestions = questions.map((q, index) => ({
+        id: index + 1,
+        questionText: q.questionText, 
+        correctOptionIndex: q.correctOptionIndex,
+        options: q.options.map((opt, oIdx) => ({
+          id: oIdx + 1,
+          label: opt.label,
+          image_url: opt.image 
+        }))
+      }));
+
+      const newCustomGame = {
+        id: Date.now().toString(),
+        name: title,
+        description: description || "Interactive Revision Game",
+        questionCount: formattedQuestions.length,
+        questions: formattedQuestions,
+        createdAt: new Date().toISOString()
+      };
+
+      // Pull existing games from the heavy-duty IndexedDB
+      const existingGames: any = (await localforage.getItem("created_games")) || [];
+      
+      // Save the new array back to IndexedDB
+      await localforage.setItem("created_games", [newCustomGame, ...existingGames]);
+
+      navigate("/revision-games"); 
+    } catch (error) {
+      console.error("Error saving game:", error);
+      alert("Failed to save the game. The images might be too large.");
+    }
+  };
+
+  // Helper Functions
+  const handleModeSelect = (selectedMode: "ai" | "custom") => {
+    if (selectedMode === "ai") {
+      setShowModeDialog(false);
+      setShowAiDialog(true);
+    } else {
+      setMode("custom");
+      setShowModeDialog(false);
+    }
+  };
+
+  const updateCurrentQuestion = (updates: Partial<QuestionData>) => {
+    setQuestions(prev => {
+      const updated = [...prev];
+      updated[currentQuestionIndex] = { ...updated[currentQuestionIndex], ...updates };
+      return updated;
+    });
+  };
+
+  const handleImageUpload = (optionIndex: number, e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setAnswerImage(reader.result as string);
+        const newOptions = [...currentQuestion.options];
+        newOptions[optionIndex] = { ...newOptions[optionIndex], image: reader.result as string };
+        updateCurrentQuestion({ options: newOptions });
       };
       reader.readAsDataURL(file);
     }
   };
 
-  const handleModeSelect = (selectedMode: "ai" | "custom") => {
-    setMode(selectedMode);
-    setShowModeDialog(false);
-  };
-
-  const handleGenerate = () => {
-    console.log("Generating with AI:", { subject, description, uploadedFile });
-    // Mock generation - would call Gemini API
-  };
-
-  const handleSave = () => {
-    console.log("Saving activity...");
-    navigate("/games");
-  };
-
-  const handleNext = () => {
-    if (currentStep < totalSteps) {
-      setCurrentStep(currentStep + 1);
-      setAnswerText("");
-      setAnswerImage(null);
-    }
-  };
-
-  const handleRepeat = () => {
-    setAnswerText("");
-    setAnswerImage(null);
-  };
-
-  const progressPercentage = (currentStep / totalSteps) * 100;
-
   return (
     <div className="min-h-screen bg-background p-6">
-      {/* Header */}
-      <motion.header
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-4 mb-6"
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => navigate("/games")}
-          className="rounded-full"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            {mode === "ai" ? "Create Activity" : "Customize Template"}
-          </h1>
-          <p className="text-muted-foreground text-sm">
-            Create and manage your lessons using Mochi AI
-          </p>
-        </div>
-      </motion.header>
+      {/* HEADER (Only visible after mode selection) */}
+      {mode === "custom" && (
+        <>
+          <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 mb-6">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/revision-games")} className="rounded-full">
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <div>
+              <h1 className="text-2xl font-bold text-foreground">Customize Lesson</h1>
+              <p className="text-muted-foreground text-sm">Review Mochi's picks and edit as you like!</p>
+            </div>
+          </motion.header>
+          <div className="h-px bg-primary/20 mb-6" />
+        </>
+      )}
 
-      {/* Divider */}
-      <div className="h-px bg-primary/20 mb-6" />
-
-      {/* Mode Selection Dialog */}
+      {/* MODE SELECTION DIALOG */}
       <Dialog open={showModeDialog} onOpenChange={setShowModeDialog}>
-        <DialogContent className="bg-card border-0 rounded-3xl p-8 max-w-md">
-          <button
-            onClick={() => setShowModeDialog(false)}
-            className="absolute right-4 top-4 rounded-sm opacity-70 ring-offset-background transition-opacity hover:opacity-100"
-          >
-            <X className="h-4 w-4" />
-          </button>
-          
-          <div className="text-center mb-6">
+         <DialogContent className="bg-card border-0 rounded-3xl p-8 max-w-md [&>button]:hidden">
+           <div className="text-center mb-6">
             <h2 className="text-2xl font-bold text-foreground">Create New Game</h2>
-            <p className="text-muted-foreground mt-1">Choose how you want to create your revision game</p>
+            <p className="text-muted-foreground mt-1">Choose how you want to build your lesson</p>
           </div>
-          
-          <div className="flex flex-col gap-4">
-            {/* Custom Template Option */}
-            <button
-              onClick={() => handleModeSelect("custom")}
-              className="flex items-center gap-4 p-4 rounded-2xl bg-amber-50 hover:bg-amber-100 transition-colors text-left border border-amber-100"
-            >
+           <div className="flex flex-col gap-4">
+            <button onClick={() => handleModeSelect("custom")} className="flex items-center gap-4 p-4 rounded-2xl bg-amber-50 hover:bg-amber-100 border border-amber-100 text-left">
               <div className="w-14 h-14 rounded-xl bg-amber-100 flex items-center justify-center shrink-0">
                 <FileEdit className="w-7 h-7 text-amber-600" />
               </div>
               <div>
                 <h3 className="font-semibold text-foreground text-lg">Custom Template</h3>
-                <p className="text-muted-foreground text-sm">Create your own questions and upload images</p>
+                <p className="text-muted-foreground text-sm">Create everything from scratch</p>
               </div>
             </button>
-            
-            {/* AI-Generated Option */}
-            <button
-              onClick={() => handleModeSelect("ai")}
-              className="flex items-center gap-4 p-4 rounded-2xl bg-pink-50 hover:bg-pink-100 transition-colors text-left border border-pink-100"
-            >
+            <button onClick={() => handleModeSelect("ai")} className="flex items-center gap-4 p-4 rounded-2xl bg-pink-50 hover:bg-pink-100 border border-pink-100 text-left">
               <div className="w-14 h-14 rounded-xl bg-pink-100 flex items-center justify-center shrink-0">
                 <Sparkles className="w-7 h-7 text-pink-500" />
               </div>
               <div>
-                <h3 className="font-semibold text-foreground text-lg">AI-Generated</h3>
-                <p className="text-muted-foreground text-sm">Let Mochi create questions automatically</p>
+                <h3 className="font-semibold text-foreground text-lg">Mochi AI</h3>
+                <p className="text-muted-foreground text-sm">Let Mochi find questions and photos for you</p>
               </div>
             </button>
+          </div>
+         </DialogContent>
+      </Dialog>
+      
+      {/* MOCHI AI INPUT DIALOG */}
+      <Dialog open={showAiDialog} onOpenChange={setShowAiDialog}>
+        <DialogContent className="bg-card border-0 rounded-3xl p-8 max-w-xl [&>button]:hidden">
+          <div className="flex justify-between items-center mb-1">
+            <h2 className="text-2xl font-bold text-foreground">Create with Mochi AI</h2>
+            <button onClick={() => { setShowAiDialog(false); setShowModeDialog(true); }} className="opacity-70 hover:opacity-100">
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <p className="text-muted-foreground mb-6">Mochi will find the perfect photos for your students!</p>
+
+          <div className="space-y-5">
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Game Theme (What do kids see?)</label>
+              <Input 
+                value={gameTopic} 
+                onChange={(e) => setGameTopic(e.target.value)} 
+                className="h-12 rounded-xl" 
+                placeholder="e.g. Under the Sea, Dinosaurs, Jungle Animals"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Learning Goal (What's the skill?)</label>
+              <Input 
+                value={subject} 
+                onChange={(e) => setSubject(e.target.value)} 
+                className="h-12 rounded-xl" 
+                placeholder="e.g. Counting 1 to 5, Primary Colors, Letter Sounds"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1.5">Mochi's Instructions (Description)</label>
+              <Textarea 
+                value={description} 
+                onChange={(e) => setDescription(e.target.value)} 
+                className="min-h-[100px] rounded-xl resize-none" 
+                placeholder="e.g. Use very simple words. Make it whimsical and fun!"
+              />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <Button variant="outline" onClick={() => { setShowAiDialog(false); setShowModeDialog(true); }} className="flex-1 h-11 rounded-full border-gray-200">Back</Button>
+              <Button onClick={handleGenerate} disabled={isGenerating} className="flex-1 h-11 rounded-full bg-cyan-500 hover:bg-cyan-600 text-white gap-2">
+                {isGenerating ? <><Loader2 className="w-4 h-4 animate-spin" /> Mochi is generating...</> : <><Sparkles className="w-4 h-4" /> Generate & Edit</>}
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* EDITOR UI (Visible after AI or Custom selection) */}
       <AnimatePresence mode="wait">
-        {/* AI Template Mode */}
-        {mode === "ai" && (
-          <motion.div
-            key="ai-mode"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-6"
-          >
-            {/* Main Form Card */}
-            <div className="bg-card rounded-3xl p-8 shadow-soft">
-              {/* Subject */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Subject
-                </label>
-                <Select value={subject} onValueChange={setSubject}>
-                  <SelectTrigger className="rounded-xl border-border">
-                    <SelectValue placeholder="Select a subject" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="fruits">Fruits</SelectItem>
-                    <SelectItem value="numbers">Numbers</SelectItem>
-                    <SelectItem value="shapes">Shapes</SelectItem>
-                    <SelectItem value="animals">Animals</SelectItem>
-                    <SelectItem value="colours">Colours</SelectItem>
-                    <SelectItem value="vegetables">Vegetables</SelectItem>
-                  </SelectContent>
-                </Select>
+        {mode === "custom" && (
+          <motion.div key="custom-mode" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
+            <div className="bg-card rounded-3xl shadow-soft overflow-hidden">
+              {/* Question Navigation Header */}
+              <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+                <Button variant="ghost" onClick={() => navigate("/revision-games")} className="text-muted-foreground hover:text-destructive font-semibold">
+                  <X className="w-5 h-5 mr-2" /> Cancel
+                </Button>
+                
+                <div className="flex flex-col items-center">
+                  <span className="text-sm font-semibold text-foreground">Question {currentQuestionIndex + 1} of {questions.length}</span>
+                  <div className="flex gap-2 mt-1">
+                    {questions.map((_, i) => (
+                      <button key={i} onClick={() => setCurrentQuestionIndex(i)} className={`w-3 h-3 rounded-full ${i === currentQuestionIndex ? "bg-primary" : "bg-muted"}`} />
+                    ))}
+                  </div>
+                </div>
+
+                <Button onClick={() => currentQuestionIndex < questions.length - 1 && setCurrentQuestionIndex(currentQuestionIndex + 1)} disabled={currentQuestionIndex >= questions.length - 1} className="bg-primary hover:bg-primary/90 font-semibold rounded-full px-6">
+                  Next <ChevronRight className="w-5 h-5 ml-1" />
+                </Button>
               </div>
 
-              {/* Description */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Description
-                </label>
-                <Textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  placeholder="Enter description how the template looks like"
-                  className="rounded-xl border-border min-h-[60px]"
-                />
-              </div>
+              {/* Editable Fields */}
+              <div className="p-8 max-w-3xl mx-auto">
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Game Title</label>
+                  <Input value={currentQuestion.gameTitle} onChange={(e) => updateCurrentQuestion({ gameTitle: e.target.value })} className="rounded-xl h-12" />
+                </div>
+                <div className="mb-8">
+                  <label className="block text-sm font-medium text-muted-foreground mb-2">Question Text</label>
+                  <Textarea value={currentQuestion.questionText} onChange={(e) => updateCurrentQuestion({ questionText: e.target.value })} className="rounded-xl min-h-[60px]" />
+                </div>
 
-              {/* File Upload */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Previous or Required Template
-                </label>
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-border rounded-2xl p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
-                >
-                  <Upload className="w-8 h-8 mx-auto mb-3 text-muted-foreground" />
-                  <p className="text-muted-foreground">
-                    Click to upload or drag and drop
-                  </p>
-                  <p className="text-sm text-muted-foreground/70">
-                    PDF, PPT, or Images
-                  </p>
-                  {uploadedFile && (
-                    <p className="mt-2 text-primary font-medium">
-                      {uploadedFile.name}
-                    </p>
-                  )}
-                  <Button variant="outline" className="mt-4 rounded-full">
-                    Browse Files
+                {/* Question Cards (Options) */}
+                <div className="grid grid-cols-3 gap-6 mb-8">
+                  {currentQuestion.options.map((option, index) => {
+                    const isCorrect = currentQuestion.correctOptionIndex === index;
+                    return (
+                      <div key={index} className="flex flex-col items-center gap-3">
+                        <div 
+                          onClick={() => imageInputRefs.current[index]?.click()} 
+                          className={`w-full aspect-[4/5] border-2 border-dashed rounded-2xl flex flex-col items-center justify-center cursor-pointer overflow-hidden relative transition-all 
+                            ${isCorrect ? "border-green-500 bg-green-50/50" : "border-border hover:border-primary/50 bg-muted/10"}`}
+                        >
+                          {option.image ? (
+                            <img src={option.image} alt={option.label} className="w-full h-full object-cover" />
+                          ) : (
+                            <>
+                              <Upload className="w-8 h-8 text-muted-foreground mb-2" />
+                              <p className="text-sm text-muted-foreground text-center px-2">Click to Upload</p>
+                            </>
+                          )}
+                        </div>
+                        <input ref={(el) => { imageInputRefs.current[index] = el; }} type="file" accept="image/*" onChange={(e) => handleImageUpload(index, e)} className="hidden" />
+                        
+                        <Input 
+                          value={option.label} 
+                          onChange={(e) => {
+                            const newOptions = [...currentQuestion.options];
+                            newOptions[index].label = e.target.value;
+                            updateCurrentQuestion({ options: newOptions });
+                          }} 
+                          placeholder={`Option ${index + 1}`} 
+                          className="text-center border-0 bg-transparent font-semibold focus-visible:ring-0" 
+                        />
+
+                        <button onClick={() => updateCurrentQuestion({ correctOptionIndex: index })} className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium ${isCorrect ? "bg-green-100 text-green-700 ring-1 ring-green-200" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}>
+                          {isCorrect ? <><CheckCircle className="w-4 h-4 fill-green-500 text-white" /> Correct</> : <><Circle className="w-4 h-4" /> Mark Correct</>}
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Footer Controls */}
+                <div className="flex justify-center gap-4">
+                  <Button onClick={() => setQuestions(prev => [...prev, { gameTitle: currentQuestion.gameTitle, questionText: "", options: [{ image: null, label: "" }, { image: null, label: "" }, { image: null, label: "" }], correctOptionIndex: 0 }])} className="rounded-full px-8 py-3 bg-secondary text-secondary-foreground hover:bg-secondary/80 gap-2">
+                    <Plus className="w-5 h-5" /> Add Question
+                  </Button>
+                  <Button onClick={handleSave} className="rounded-full px-8 py-3 bg-green-500 hover:bg-green-600 text-white gap-2 shadow-lg hover:shadow-xl transition-all">
+                    <Save className="w-5 h-5" /> Save Lesson
                   </Button>
                 </div>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  accept=".pdf,.ppt,.pptx,image/*"
-                  onChange={handleFileUpload}
-                  className="hidden"
-                />
               </div>
-
-              {/* Generate Button */}
-              <div className="flex justify-center mb-6">
-                <Button
-                  onClick={handleGenerate}
-                  variant="outline"
-                  className="rounded-full px-8"
-                >
-                  Generate
-                </Button>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex justify-between">
-                <Button
-                  onClick={handleSave}
-                  variant="outline"
-                  className="rounded-full gap-2"
-                >
-                  <Save className="w-4 h-4" />
-                  Save
-                </Button>
-                <Button variant="outline" className="rounded-full gap-2">
-                  <Eye className="w-4 h-4" />
-                  Preview
-                </Button>
-              </div>
-            </div>
-
-            {/* Recent Activities */}
-            <div className="bg-card rounded-3xl p-6 shadow-soft">
-              <h3 className="text-lg font-semibold text-foreground mb-4">
-                Recent Activities
-              </h3>
-              <div className="space-y-3">
-                {recentActivities.map((activity) => (
-                  <div
-                    key={activity.id}
-                    className="flex items-center justify-between p-3 bg-background rounded-xl"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <FileText className="w-5 h-5 text-primary" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-foreground">
-                          {activity.name}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          {activity.className}
-                        </p>
-                      </div>
-                    </div>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        activity.status === "completed"
-                          ? "bg-success/20 text-success"
-                          : "bg-muted text-muted-foreground"
-                      }`}
-                    >
-                      {activity.status === "completed" ? "Completed" : "To Be Completed"}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Custom Template Mode */}
-        {mode === "custom" && (
-          <motion.div
-            key="custom-mode"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="space-y-6"
-          >
-            {/* Template Preview Card */}
-            <div className="bg-muted/30 rounded-3xl p-6 shadow-soft overflow-hidden">
-              {/* Top Bar */}
-              <div className="flex items-center justify-between mb-4 bg-muted/50 rounded-2xl p-4">
-                <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center">
-                  <span className="text-primary font-bold text-sm">m</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-sm font-medium text-foreground">Learning:</span>
-                  <Input
-                    value={lessonName}
-                    onChange={(e) => setLessonName(e.target.value)}
-                    className="border-0 bg-transparent text-muted-foreground p-0 h-auto text-sm w-32"
-                    placeholder="Lesson name"
-                  />
-                </div>
-              </div>
-
-              {/* Main Content */}
-              <div className="grid grid-cols-2 gap-6">
-                {/* Left - Avatar */}
-                <div className="bg-muted/40 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[280px]">
-                  <MochiAvatar size="xl" showBubble={false} />
-                  <div className="mt-4 bg-card rounded-xl px-6 py-3 shadow-soft">
-                    <Input
-                      value={answerText}
-                      onChange={(e) => setAnswerText(e.target.value)}
-                      placeholder="Text"
-                      className="border-0 bg-transparent text-center text-muted-foreground"
-                    />
-                  </div>
-                </div>
-
-                {/* Right - Upload Area */}
-                <div className="bg-muted/40 rounded-2xl p-4 flex flex-col items-center justify-center min-h-[280px]">
-                  <div
-                    onClick={() => imageInputRef.current?.click()}
-                    className="flex-1 w-full bg-card rounded-xl flex flex-col items-center justify-center cursor-pointer hover:bg-card/80 transition-colors"
-                  >
-                    {answerImage ? (
-                      <img
-                        src={answerImage}
-                        alt="Answer"
-                        className="max-h-32 object-contain rounded-lg"
-                      />
-                    ) : (
-                      <>
-                        <Camera className="w-12 h-12 text-muted-foreground mb-2" />
-                        <p className="text-sm text-muted-foreground">
-                          Click to upload or drag and drop
-                        </p>
-                        <p className="text-xs text-muted-foreground/70">
-                          PDF, PPT, or Images
-                        </p>
-                      </>
-                    )}
-                  </div>
-                  <input
-                    ref={imageInputRef}
-                    type="file"
-                    accept="image/*,.pdf,.ppt,.pptx"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <div className="mt-4 text-center">
-                    <p className="text-2xl font-light text-muted-foreground/50 mb-2">
-                      Text
-                    </p>
-                    <Button variant="outline" className="rounded-full gap-2">
-                      <Volume2 className="w-4 h-4" />
-                      Listen
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Control Buttons */}
-              <div className="flex justify-between items-center mt-6">
-                <Button
-                  onClick={handleRepeat}
-                  variant="outline"
-                  className="rounded-full gap-2"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                  Repeat
-                </Button>
-                <Button
-                  onClick={handleNext}
-                  className="rounded-full gap-2 bg-primary hover:bg-primary/90"
-                >
-                  <ArrowRight className="w-4 h-4" />
-                  Next
-                </Button>
-              </div>
-
-              {/* Progress Bar */}
-              <div className="mt-6 bg-muted/50 rounded-xl p-4">
-                <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm font-medium text-foreground">
-                    Lesson Progress
-                  </span>
-                  <span className="text-sm text-muted-foreground">
-                    {currentStep} of {totalSteps}
-                  </span>
-                </div>
-                <Progress value={progressPercentage} className="h-2" />
-              </div>
-            </div>
-
-            {/* Save Button */}
-            <div className="flex justify-center">
-              <Button
-                onClick={handleSave}
-                className="rounded-full px-12 py-6 text-lg bg-primary hover:bg-primary/90"
-              >
-                Save Template
-              </Button>
             </div>
           </motion.div>
         )}
