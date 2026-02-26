@@ -27,6 +27,26 @@ def init_gemini():
     except Exception as e:
         logger.error(f"Failed to initialize Gemini: {e}")
 
+def summarize_query_for_unsplash(query):
+    if not query or not query.strip():
+        return "happy"
+        
+    global client
+    if not client:
+        return query
+
+    try:
+        summarize_prompt = f"Summarize this into 1 or 2 simple nouns for an image search: '{query}'"
+        response = client.models.generate_content(
+            model='gemini-3-flash-preview', 
+            contents=summarize_prompt,
+            config=types.GenerateContentConfig(temperature=0.3)
+        )
+        return response.text.strip().lower().replace('.', '')
+    except Exception as e:
+        logger.error(f"Summarization Error: {e}")
+        return query 
+
 
 def generate_ai_image(query):
     global client
