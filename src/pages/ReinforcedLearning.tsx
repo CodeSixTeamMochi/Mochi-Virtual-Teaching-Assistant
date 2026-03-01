@@ -7,6 +7,8 @@ import ChatHistory from '../components/ReinforcedLearning/ChatHistory';
 import ArrowLeft from '../components/ui/ArrowLeft';
 import CorrectionCard from '../components/ReinforcedLearning/CorrectionCard';
 import { PHONETIC_DICTIONARY, getPhoneticBreakdown, WordData } from '@/services/PhoneticDictionary';
+import { useNavigate } from "react-router-dom";
+import { Button } from '@/components/ui/button';
 
 export default function ReinforcedLearning() {
   const [feedback, setFeedback] = useState("");
@@ -17,6 +19,7 @@ export default function ReinforcedLearning() {
   const wakeWordRecognition = useRef<any>(null);
   const audioChunks = useRef<BlobPart[]>([]);
   const [isThinking, setIsThinking] = useState(false);
+  const navigate = useNavigate();
 
   const [history, setHistory] = useState<ChatMessage[]>([]); // Stores the chat messages
   const scrollRef = useRef<HTMLDivElement>(null); // Helps us scroll to the latest message
@@ -320,6 +323,15 @@ export default function ReinforcedLearning() {
     <div className="h-screen w-full flex bg-[#f0f9ff] overflow-hidden">
 
       <ArrowLeft />
+
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => navigate("/phonetic-dashboard")}
+        className="absolute top-4 right-4 z-50 bg-background/50 backdrop-blur-sm border-border hover:bg-muted"
+      >
+        View Teacher Dashboard
+      </Button>
     
       {/* LEFT SIDE: HISTORY BAR */}
       <ChatHistory history={history} scrollRef={scrollRef} />
