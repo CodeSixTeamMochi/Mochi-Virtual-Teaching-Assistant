@@ -99,3 +99,33 @@ export async function generateAIContent(query: string): Promise<GeneratedContent
   }
 }
 
+/**
+ * VISUAL SEARCH: Calls /api/visual-search
+ */
+export async function getSearchResults(query: string): Promise<VisualResult[]> {
+  try {
+    const response = await fetch(`${BACKEND_URL}/visual-search`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+    });
+    
+    if (!response.ok) return [];
+    
+    const data = await response.json();
+    const items = Array.isArray(data.results) ? data.results : (data.items || []);
+    
+    return items.map((item: any) => ({
+      id: item.id || item.link || Math.random().toString(),
+      title: item.title || "Image",
+      imageUrl: formatImageSource(item.imageUrl || item.link || item.thumbnail),
+      type: 'image',
+      description: item.description || item.snippet || ""
+    }));
+    
+  } catch (error) {
+    console.error("Search Service Error:", error);
+    return [];
+  }
+}
+

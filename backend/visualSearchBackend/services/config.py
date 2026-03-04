@@ -14,6 +14,7 @@ class Config:
     
     # API Keys (Mapping VITE_ names from .env to internal Config names)
     GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
+    UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
     
     
     # Flask settings

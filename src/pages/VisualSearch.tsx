@@ -5,7 +5,7 @@ import VisualSearchBar from '@/components/mochi/VisualSearchBar';
 import SearchResultsPanel from '@/components/mochi/SearchResultsPanel';
 import GenerateWithMochiPanel from '@/components/mochi/GenerateWithMochiPanel';
 import {
-  //getUnsplashResults,      
+  getSearchResults,      
   generateAIContent,
   type VisualResult,      
   type GeneratedContent   
@@ -37,6 +37,17 @@ const VisualSearch = () => {
     setIsSearching(true);
     setHasSearched(true);
     setShowResults(true);
+
+    try {
+      // Replaced mock with real service function
+      const results = await getSearchResults(query);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
 
   }, []);
 

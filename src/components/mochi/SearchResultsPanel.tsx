@@ -142,7 +142,7 @@ const SearchResultsPanel = ({
             {/* The "Discovery Frame" - Updated to use high-res link for clear viewing */}
             <div className="relative group w-full bg-white p-3 rounded-[2.5rem] shadow-2xl border-[6px] border-white/10">
               <img 
-                src={selectedImage.link || selectedImage.thumbnail} 
+                src={(selectedImage as any).imageUrl || (selectedImage as any).link || (selectedImage as any).thumbnail}  
                 alt={selectedImage.title}
                 className="w-full h-auto max-h-[65vh] object-contain rounded-[1.8rem]"
               />
@@ -159,13 +159,15 @@ const SearchResultsPanel = ({
                 </h3>
                 <div className="flex items-center justify-center md:justify-start gap-2">
                   <span className="text-xs bg-slate-100 text-slate-500 px-3 py-1 rounded-full font-bold">
-                    {selectedImage.link?.replace('https://', '').split('/')[0]}
+                    {(selectedImage as any).link 
+                      ? (selectedImage as any).link.replace('https://', '').split('/')[0] 
+                      : ''}
                   </span>
                 </div>
               </div>
               
               <a 
-                href={selectedImage.link} 
+                href={(selectedImage as any).link || (selectedImage as any).imageUrl} 
                 target="_blank" 
                 rel="noreferrer"
                 className="flex items-center justify-center gap-3 bg-primary text-white px-8 py-4 rounded-full font-black text-sm hover:opacity-90 transition-all active:scale-95 shadow-xl shadow-primary/20 whitespace-nowrap"
