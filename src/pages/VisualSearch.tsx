@@ -1,9 +1,9 @@
 import { useState, useCallback } from 'react';
 import { ArrowLeft } from 'lucide-react';
-import MochiGreeting from '@/components/mochi/MochiGreeting';
-import VisualSearchBar from '@/components/mochi/VisualSearchBar';
-import SearchResultsPanel from '@/components/mochi/SearchResultsPanel';
-import GenerateWithMochiPanel from '@/components/mochi/GenerateWithMochiPanel';
+import MochiGreeting from '@/components/visualSearch/MochiGreeting';
+import VisualSearchBar from '@/components/visualSearch/VisualSearchBar';
+import SearchResultsPanel from '@/components/visualSearch/SearchResultsPanel';
+import GenerateWithMochiPanel from '@/components/visualSearch/GenerateWithMochiPanel';
 import {
   getSearchResults,      
   generateAIContent,
