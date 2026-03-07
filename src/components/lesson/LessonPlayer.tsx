@@ -8,6 +8,7 @@ import { speak, stop, preloadVoices } from '@/services/ttsService';
 import { Lesson } from '@/types/lesson';
 import { toast } from '@/hooks/use-toast';
 import mochiCharacter from '@/assets/mochi-avatar.jpeg';
+import { markLessonAsDone } from '@/services/storageService';
 
 const LessonPlayer = () => {
   const navigate = useNavigate();
@@ -81,6 +82,7 @@ const LessonPlayer = () => {
     if (!isLastItem) {
       setCurrentIndex(prev => prev + 1);
     } else {
+      markLessonAsDone(lesson.id);
       toast({
         title: '🎉 Lesson Complete!',
         description: 'Great job finishing this lesson!',

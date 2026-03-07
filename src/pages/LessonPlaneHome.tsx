@@ -8,15 +8,19 @@ import LessonCard from '@/components/lesson/LessonCard';
 import CreateLessonModal from '@/components/lesson/CreateLessonModal';
 import AILessonModal from '@/components/lesson/AILessonModal';
 import { toast } from '@/hooks/use-toast';
+import { CheckCircle2, LayoutGrid } from 'lucide-react';
+import { getCompletedLessonIds } from '@/services/storageService';
 
 const Index = () => {
   const navigate = useNavigate();
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
+  const [completedIds, setCompletedIds] = useState<string[]>([]);
 
   useEffect(() => {
     setLessons(getLessons());
+    setCompletedIds(getCompletedLessonIds());
   }, []);
 
   const handlePlayLesson = (lessonId: string) => {
@@ -74,16 +78,52 @@ const Index = () => {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {lessons.map(lesson => (
-              <LessonCard
-                key={lesson.id}
-                lesson={lesson}
-                onClick={() => handlePlayLesson(lesson.id)}
-                onEdit={() => handleEditLesson(lesson.id)}
-                onDelete={() => handleDeleteLesson(lesson.id)}
-              />
-            ))}
+          <div className="space-y-12">
+            {/* 1. ACTIVE LESSONS SECTION */}
+            <section>
+              <div className="flex items-center gap-2 mb-6">
+                <LayoutGrid className="h-6 w-6 text-primary" />
+                <h2 className="text-2xl font-bold text-foreground">Active Lessons</h2>
+              </div>
+              
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {lessons
+                  .filter(lesson => !completedIds.includes(lesson.id))
+                  .map(lesson => (
+                    <LessonCard
+                      key={lesson.id}
+                      lesson={lesson}
+                      onClick={() => handlePlayLesson(lesson.id)}
+                      onEdit={() => handleEditLesson(lesson.id)}
+                      onDelete={() => handleDeleteLesson(lesson.id)}
+                    />
+                  ))}
+              </div>
+            </section>
+
+            {/* 2. COMPLETED LESSONS SECTION */}
+            {lessons.some(lesson => completedIds.includes(lesson.id)) && (
+              <section className="pt-6 border-t border-border">
+                <div className="flex items-center gap-2 mb-6 text-green-600">
+                  <CheckCircle2 className="h-6 w-6" />
+                  <h2 className="text-2xl font-bold">Completed Lessons</h2>
+                </div>
+                
+                <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 opacity-80">
+                  {lessons
+                    .filter(lesson => completedIds.includes(lesson.id))
+                    .map(lesson => (
+                      <LessonCard
+                        key={lesson.id}
+                        lesson={lesson}
+                        onClick={() => handlePlayLesson(lesson.id)}
+                        onEdit={() => handleEditLesson(lesson.id)}
+                        onDelete={() => handleDeleteLesson(lesson.id)}
+                      />
+                    ))}
+                </div>
+              </section>
+            )}
           </div>
         )}
       </main>

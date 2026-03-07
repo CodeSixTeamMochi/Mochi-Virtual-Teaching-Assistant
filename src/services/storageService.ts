@@ -1,6 +1,7 @@
 import { Lesson, LessonFormData, LessonItem } from '@/types/lesson';
 
 const LESSONS_KEY = 'lessons';
+const COMPLETED_LESSONS_KEY = 'completed_lessons';
 
 // Generate unique ID
 const generateId = (): string => {
@@ -82,4 +83,17 @@ export const deleteLesson = (id: string): boolean => {
   
   localStorage.setItem(LESSONS_KEY, JSON.stringify(filtered));
   return true;
+};
+
+export const markLessonAsDone = (lessonId: string): void => {
+  const completed = getCompletedLessonIds();
+  if (!completed.includes(lessonId)) {
+    completed.push(lessonId);
+    localStorage.setItem(COMPLETED_LESSONS_KEY, JSON.stringify(completed));
+  }
+};
+
+export const getCompletedLessonIds = (): string[] => {
+  const data = localStorage.getItem(COMPLETED_LESSONS_KEY);
+  return data ? JSON.parse(data) : [];
 };
