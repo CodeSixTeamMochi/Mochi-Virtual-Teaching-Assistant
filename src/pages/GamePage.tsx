@@ -6,6 +6,7 @@ import MochiAvatar from "@/components/game/MochiAvatar";
 import AnswerCard from "@/components/game/AnswerCard";
 import FeedbackOverlay from "@/components/game/FeedbackOverlay";
 import VoiceRecorder from "@/components/game/VoiceRecorder";
+import localforage from "localforage"; 
 
 import {
   Question,
@@ -14,6 +15,41 @@ import {
   fetchGeminiFeedback,
   GeminiFeedback,
 } from "@/lib/mockData";
+
+// --- INTERFACES ---
+interface SavedGame {
+  id: string;
+  name: string; 
+  description: string;
+  questions: {
+    questionText: string; 
+    options: { label: string; image: string | null }[];
+  }[];
+  createdAt: string;
+}
+
+// THE FIX: Strict ID mapping instead of text matching
+const convertSavedGameQuestions = (savedGame: any): Question[] => {
+  return savedGame.questions.map((q: any, idx: number) => {
+    
+    // 1. Safely grab the index you marked as correct (fallback to 0)
+    const correctIndex = q.correctOptionIndex !== undefined ? q.correctOptionIndex : 0;
+    const correctAnswerLabel = q.options[correctIndex]?.label || "Unknown";
+    
+    return {
+      id: idx + 1,
+      category_id: -1,
+      target_item: q.target_item || correctAnswerLabel,
+      correct_answer: correctAnswerLabel,
+      correct_answer_id: correctIndex + 1, // 2. Force it to explicitly use the ID!
+      options: q.options.map((opt: any, optIdx: number) => ({
+        id: optIdx + 1,
+        label: opt.label,
+        image_url: opt.image_url || opt.image || `https://placehold.co/300x300?text=${opt.label}`,
+      })),
+    };
+  });
+};
 
 const GamePage = () => {
   const navigate = useNavigate();
@@ -30,10 +66,26 @@ const GamePage = () => {
   useEffect(() => {
     const loadQuestions = async () => {
       if (!categoryId) return;
-      const data = await fetchQuestions(parseInt(categoryId));
-      setQuestions(data);
-      setIsLoading(false);
+
+      try {
+        const savedGames: any = (await localforage.getItem("created_games")) || [];
+        
+        const localGame = savedGames.find((g: any) => g.id.toString() === categoryId);
+
+        if (localGame) {
+          const convertedQuestions = convertSavedGameQuestions(localGame);
+          setQuestions(convertedQuestions);
+        } else {
+          const data = await fetchQuestions(parseInt(categoryId));
+          setQuestions(data);
+        }
+      } catch (error) {
+        console.error("Failed to load questions:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
+    
     loadQuestions();
   }, [categoryId]);
 
@@ -44,16 +96,36 @@ const GamePage = () => {
     
     setSelectedOption(option);
     
-    // Get AI feedback
+    // 3. Check exact numeric ID, completely ignoring text casing or spaces
+    const isCorrectLocally = (currentQuestion as any).correct_answer_id 
+      ? option.id === (currentQuestion as any).correct_answer_id
+      : option.label.toLowerCase() === currentQuestion.correct_answer.toLowerCase();
+    
+    // Fetch the AI feedback
     const result = await fetchGeminiFeedback(
       option.label,
       currentQuestion.correct_answer,
       currentQuestion.target_item
     );
     
+    // Override the AI's logic to perfectly match our ID logic
+    result.isCorrect = isCorrectLocally;
+    
+    const targetName = currentQuestion.target_item && currentQuestion.target_item !== "Unknown" 
+      ? currentQuestion.target_item 
+      : "correct answer";
+
+    if (isCorrectLocally) {
+      result.message = `Great job! You found the ${targetName}!`;
+      result.encouragement = "Keep it up!";
+    } else {
+      result.message = `Close! Try finding the ${targetName}!`;
+      result.encouragement = "You can do it! Try again!";
+    }
+    
     setFeedback(result);
     
-    if (result.isCorrect) {
+    if (isCorrectLocally) {
       setScore(prev => prev + 1);
     }
     
@@ -61,7 +133,6 @@ const GamePage = () => {
   };
 
   const handleVoiceInput = async (transcript: string) => {
-    // Find matching option based on transcript
     const matchingOption = currentQuestion.options.find(
       opt => opt.label.toLowerCase() === transcript.toLowerCase()
     );
@@ -69,12 +140,12 @@ const GamePage = () => {
     if (matchingOption) {
       handleSelectOption(matchingOption);
     } else {
-      // Handle no match - provide feedback
       const result = await fetchGeminiFeedback(
         transcript,
         currentQuestion.correct_answer,
         currentQuestion.target_item
       );
+      result.isCorrect = false;
       setFeedback(result);
       setShowFeedback(true);
     }
@@ -87,7 +158,6 @@ const GamePage = () => {
       setShowFeedback(false);
       setFeedback(null);
     } else {
-      // Game complete - navigate to results
       navigate("/revision-games", { state: { score, total: questions.length } });
     }
   };
@@ -138,7 +208,6 @@ const GamePage = () => {
 
   return (
     <div className="min-h-screen bg-background p-6 flex flex-col">
-      {/* Header */}
       <GameHeader
         currentQuestion={currentQuestionIndex + 1}
         totalQuestions={questions.length}
@@ -147,9 +216,7 @@ const GamePage = () => {
         canProceed={!!feedback?.isCorrect}
       />
 
-      {/* Main Game Area */}
       <div className="flex-1 flex flex-col lg:flex-row items-center justify-center gap-8 py-8">
-        {/* Left: Mochi Avatar */}
         <motion.div
           initial={{ opacity: 0, x: -50 }}
           animate={{ opacity: 1, x: 0 }}
@@ -162,26 +229,31 @@ const GamePage = () => {
           />
         </motion.div>
 
-        {/* Right: Answer Options */}
         <motion.div
           initial={{ opacity: 0, x: 50 }}
           animate={{ opacity: 1, x: 0 }}
           className="flex flex-col items-center gap-6"
         >
           <div className="grid grid-cols-3 gap-4">
-            {currentQuestion.options.map((option) => (
-              <AnswerCard
-                key={option.id}
-                option={option}
-                onSelect={handleSelectOption}
-                isSelected={selectedOption?.id === option.id}
-                isCorrect={option.label === currentQuestion.correct_answer}
-                isRevealed={showFeedback}
-              />
-            ))}
+            {currentQuestion.options.map((option) => {
+              // 4. Update the visual UI check to strictly use the ID too!
+              const isOptionCorrectLocally = (currentQuestion as any).correct_answer_id
+                ? option.id === (currentQuestion as any).correct_answer_id
+                : option.label === currentQuestion.correct_answer;
+
+              return (
+                <AnswerCard
+                  key={option.id}
+                  option={option}
+                  onSelect={handleSelectOption}
+                  isSelected={selectedOption?.id === option.id}
+                  isCorrect={isOptionCorrectLocally}
+                  isRevealed={showFeedback}
+                />
+              );
+            })}
           </div>
 
-          {/* Voice Recorder */}
           <div className="mt-4">
             <VoiceRecorder
               onRecordingComplete={handleVoiceInput}
@@ -191,7 +263,6 @@ const GamePage = () => {
         </motion.div>
       </div>
 
-      {/* Feedback Overlay */}
       {feedback && (
         <FeedbackOverlay
           isVisible={showFeedback}
