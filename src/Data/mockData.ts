@@ -2,7 +2,8 @@ export interface EmergencyContact {
   id: string;
   name: string;
   phone: string;
-  icon: "ambulance" | "nurse" | "hospital";
+  type: string;
+  icon: string;
 }
 
 export interface MedicationReminder {
@@ -27,9 +28,9 @@ export interface Student {
 }
 
 export const emergencyContacts: EmergencyContact[] = [
-  { id: "1", name: "Ambulance Service", phone: "1990", icon: "ambulance" },
-  { id: "2", name: "School Nurse", phone: "+94 77 123 4567", icon: "nurse" },
-  { id: "3", name: "Nearest Hospital", phone: "+94 11 234 5678", icon: "hospital" },
+  { id: "1", name: "Ambulance Service", phone: "1990", type: "Ambulance", icon: "ambulance" },
+  { id: "2", name: "School Nurse", phone: "+94 77 123 4567", type: "Nurse", icon: "nurse" },
+  { id: "3", name: "Nearest Hospital", phone: "+94 11 234 5678", type: "Hospital", icon: "hospital" },
 ];
 
 export const medicationReminders: MedicationReminder[] = [

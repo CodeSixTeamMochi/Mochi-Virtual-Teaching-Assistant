@@ -1,6 +1,19 @@
 import { useState } from "react";
-import { X } from "lucide-react";
+import { X, Stethoscope, Building2, UserCog, Siren } from "lucide-react";
 import { EmergencyContact } from "@/Data/mockData";
+
+// Icon preview component
+const getIconComponent = (iconName: string, size: string = "h-6 w-6") => {
+  const iconMap: { [key: string]: JSX.Element } = {
+    ambulance: <Siren className={size} />,
+    doctor: <Stethoscope className={size} />,
+    nurse: <Stethoscope className={size} />,
+    hospital: <Building2 className={size} />,
+    principal: <UserCog className={size} />,
+  };
+  
+  return iconMap[iconName] || <Siren className={size} />;
+};
 
 interface Props {
   isOpen: boolean;
@@ -11,19 +24,21 @@ interface Props {
 const AddEmergencyContactModal = ({ isOpen, onClose, onAdd }: Props) => {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
-  const [icon, setIcon] = useState<"ambulance" | "nurse" | "hospital">("ambulance");
+  const [type, setType] = useState("");
+  const [icon, setIcon] = useState("ambulance");
 
   if (!isOpen) return null;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (name.trim() && phone.trim()) {
+    if (name.trim() && phone.trim() && type.trim()) {
       const newContact: EmergencyContact = {
         id: `emergency-${Date.now()}`,
         name: name.trim(),
         phone: phone.trim(),
-        icon,
+        type: type.trim(),
+        icon: icon,
       };
       
       onAdd(newContact);
@@ -34,6 +49,7 @@ const AddEmergencyContactModal = ({ isOpen, onClose, onAdd }: Props) => {
   const handleClose = () => {
     setName("");
     setPhone("");
+    setType("");
     setIcon("ambulance");
     onClose();
   };
@@ -82,17 +98,41 @@ const AddEmergencyContactModal = ({ isOpen, onClose, onAdd }: Props) => {
 
           <div>
             <label className="mb-1 block text-sm font-medium text-card-foreground">
+              Type
+            </label>
+            <input
+              type="text"
+              value={type}
+              onChange={(e) => setType(e.target.value)}
+              placeholder="e.g., Doctor, Principal, Headmaster"
+              className="w-full rounded-lg border border-input bg-background px-4 py-2 text-card-foreground outline-none focus:ring-2 focus:ring-ring"
+              required
+            />
+            <p className="mt-1 text-xs text-muted-foreground">
+              You can enter the role: Doctor, Principal, Headmaster, Security, etc.
+            </p>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-card-foreground">
               Icon
             </label>
-            <select
-              value={icon}
-              onChange={(e) => setIcon(e.target.value as "ambulance" | "nurse" | "hospital")}
-              className="w-full rounded-lg border border-input bg-background px-4 py-2 text-card-foreground outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option value="ambulance">🚑 Ambulance</option>
-              <option value="nurse">👩‍⚕️ Nurse</option>
-              <option value="hospital">🏥 Hospital</option>
-            </select>
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                {getIconComponent(icon, "h-6 w-6")}
+              </div>
+              <select
+                value={icon}
+                onChange={(e) => setIcon(e.target.value)}
+                className="flex-1 rounded-lg border border-input bg-background px-4 py-2 text-card-foreground outline-none focus:ring-2 focus:ring-ring"
+              >
+                <option value="ambulance">🚑 Ambulance</option>
+                <option value="doctor">👨‍⚕️ Doctor</option>
+                <option value="nurse">👩‍⚕️ Nurse</option>
+                <option value="hospital">🏥 Hospital</option>
+                <option value="principal">👔 Principal</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex gap-3 pt-2">

@@ -1,12 +1,19 @@
 import { useState } from "react";
-import { Phone, Cross, Building2, Pencil, Plus, X  } from "lucide-react";
+import { Phone, Cross, Building2, Pencil, Plus, X, Stethoscope, UserCog, Siren  } from "lucide-react";
 import { EmergencyContact } from "@/Data/mockData.ts";
 import AddEmergencyContactModal from "./AddEmergencyContactModal";
 
-const iconMap = {
-  ambulance: "🚑",
-  nurse: "👩‍⚕️",
-  hospital: "🏥",
+// Icon mapping using Lucide icons
+const getIconComponent = (iconName: string) => {
+  const iconMap: { [key: string]: JSX.Element } = {
+    ambulance: <Siren className="h-6 w-6" />,
+    doctor: <Stethoscope className="h-6 w-6" />,
+    nurse: <Stethoscope className="h-6 w-6" />,
+    hospital: <Building2 className="h-6 w-6" />,
+    principal: <UserCog className="h-6 w-6" />,
+  };
+  
+  return iconMap[iconName] || <Phone className="h-6 w-6" />;
 };
 
 interface Props {
@@ -120,7 +127,14 @@ const EmergencyContacts = ({ contacts, onUpdateContact, onAddContact, onDeleteCo
               >
                 <div className="mb-3 space-y-2">
                   <div className="flex items-start justify-between">
-                    <span className="text-2xl">{iconMap[contact.icon]}</span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        {getIconComponent(contact.icon)}
+                      </div>
+                      <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+                        {contact.type}
+                      </span>
+                    </div>
                     <button
                       onClick={() => handleDeleteFromEdit(contact.id)}
                       className="flex h-6 w-6 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
@@ -148,14 +162,26 @@ const EmergencyContacts = ({ contacts, onUpdateContact, onAddContact, onDeleteCo
                   </div>
                   <div>
                     <label className="mb-1 block text-xs font-medium text-muted-foreground">Icon</label>
+                    <input
+                      type="text"
+                      value={contact.type}
+                      onChange={(e) => handleContactChange(contact.id, "type", e.target.value)}
+                      placeholder="e.g., Doctor, Principal"
+                      className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-xs font-medium text-muted-foreground">Icon</label>
                     <select
                       value={contact.icon}
-                      onChange={(e) => handleContactChange(contact.id, "icon", e.target.value as "ambulance" | "nurse" | "hospital")}
+                      onChange={(e) => handleContactChange(contact.id, "icon", e.target.value)}
                       className="w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
                     >
                       <option value="ambulance">🚑 Ambulance</option>
+                      <option value="doctor">👨‍⚕️ Doctor</option>
                       <option value="nurse">👩‍⚕️ Nurse</option>
                       <option value="hospital">🏥 Hospital</option>
+                      <option value="principal">👔 Principal</option>
                     </select>
                   </div>
                 </div>
@@ -170,12 +196,19 @@ const EmergencyContacts = ({ contacts, onUpdateContact, onAddContact, onDeleteCo
                 key={contact.id}
                 className="flex flex-col justify-between rounded-xl border border-border bg-card p-4"
               >
-                <div className="mb-3 flex items-start justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">{contact.name}</p>
-                    <p className="text-xl font-bold text-card-foreground">{contact.phone}</p>
+                <div className="mb-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        {getIconComponent(contact.icon)}
+                      </div>
+                      <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-semibold text-primary">
+                        {contact.type}
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-2xl">{iconMap[contact.icon]}</span>
+                  <p className="text-sm font-medium text-muted-foreground">{contact.name}</p>
+                  <p className="text-xl font-bold text-card-foreground">{contact.phone}</p>
                 </div>
                 <button
                   onClick={() => handleCall(contact.phone)}
