@@ -9,7 +9,7 @@ import CreateLessonModal from '@/components/lesson/CreateLessonModal';
 import AILessonModal from '@/components/lesson/AILessonModal';
 import { toast } from '@/hooks/use-toast';
 import { CheckCircle2, LayoutGrid } from 'lucide-react';
-import { getCompletedLessonIds } from '@/services/storageService';
+import { getCompletedLessonIds,resetSingleLessonProgress } from '@/services/storageService';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -42,6 +42,15 @@ const Index = () => {
 
   const handleCreateLesson = () => {
     navigate('/CreateLesson');
+  };
+
+  const handleResetSingle = (lessonId: string) => {
+  resetSingleLessonProgress(lessonId);
+  setCompletedIds(getCompletedLessonIds()); // Refresh the list
+  toast({
+    title: "Lesson Reset",
+    description: "This lesson is now back in your Active list.",
+  });
   };
 
   return (
@@ -93,6 +102,8 @@ const Index = () => {
                     <LessonCard
                       key={lesson.id}
                       lesson={lesson}
+                      
+                      
                       onClick={() => handlePlayLesson(lesson.id)}
                       onEdit={() => handleEditLesson(lesson.id)}
                       onDelete={() => handleDeleteLesson(lesson.id)}
@@ -116,6 +127,8 @@ const Index = () => {
                       <LessonCard
                         key={lesson.id}
                         lesson={lesson}
+                        isCompleted={true}
+                        onReset={() => handleResetSingle(lesson.id)}
                         onClick={() => handlePlayLesson(lesson.id)}
                         onEdit={() => handleEditLesson(lesson.id)}
                         onDelete={() => handleDeleteLesson(lesson.id)}

@@ -97,3 +97,9 @@ export const getCompletedLessonIds = (): string[] => {
   const data = localStorage.getItem(COMPLETED_LESSONS_KEY);
   return data ? JSON.parse(data) : [];
 };
+
+export const resetSingleLessonProgress = (lessonId: string): void => {
+  const completed = getCompletedLessonIds();
+  const updated = completed.filter(id => id !== lessonId);
+  localStorage.setItem(COMPLETED_LESSONS_KEY, JSON.stringify(updated));
+};

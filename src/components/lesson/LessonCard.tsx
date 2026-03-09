@@ -13,21 +13,28 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { BookOpen, Pencil, Trash2 } from 'lucide-react';
+import { BookOpen, Pencil, Trash2, RotateCcw } from 'lucide-react';
 
 interface LessonCardProps {
   lesson: Lesson;
   onClick: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onReset?: () => void;
+  isCompleted?: boolean;
 }
 
-const LessonCard = ({ lesson, onClick, onEdit, onDelete }: LessonCardProps) => {
+const LessonCard = ({ lesson, onClick, onEdit, onDelete, onReset, isCompleted }: LessonCardProps) => {
   const handleEdit = (e: React.MouseEvent) => {
     e.stopPropagation();
     onEdit();
   };
 
+  const handleReset = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (onReset) onReset();
+  };
+  
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
   };
@@ -65,6 +72,17 @@ const LessonCard = ({ lesson, onClick, onEdit, onDelete }: LessonCardProps) => {
             {lesson.items.length} items
           </span>
           <div className="flex gap-1" onClick={handleDeleteClick}>
+            {isCompleted && onReset && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-orange-500 hover:text-orange-600 hover:bg-orange-50"
+                onClick={handleReset}
+                title="Reset Progress"
+              >
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+            )}  
             <Button
               variant="ghost"
               size="icon"
