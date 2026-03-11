@@ -113,165 +113,171 @@ const MedicationReminders = ({
               <p className="text-sm text-muted-foreground">No medication reminders set</p>
             </div>
           ) : (
-            medications.map((med) => (
-              <div
-                key={med.id}
-                className="rounded-xl border border-border bg-background p-4"
-              >
-                {editingId === med.id && editForm ? (
-                  // Edit Mode
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-card-foreground">
-                          Student
-                        </label>
-                        <select
-                          value={editForm.studentName}
-                          onChange={(e) => setEditForm({ ...editForm, studentName: e.target.value })}
-                          className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
-                        >
-                          {students.map((student) => (
-                            <option key={student.id} value={student.name}>
-                              {student.name}
-                            </option>
-                          ))}
-                        </select>
+            medications.map((med) => {
+              // ✅ FIX: Set default status if missing
+              const status = med.status || 'pending';
+              
+              return (
+                <div
+                  key={med.id}
+                  className="rounded-xl border border-border bg-background p-4"
+                >
+                  {editingId === med.id && editForm ? (
+                    // Edit Mode
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-card-foreground">
+                            Student
+                          </label>
+                          <select
+                            value={editForm.studentName}
+                            onChange={(e) => setEditForm({ ...editForm, studentName: e.target.value })}
+                            className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
+                          >
+                            {students.map((student) => (
+                              <option key={student.id} value={student.name}>
+                                {student.name}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-card-foreground">
+                            Medication
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.medicationName}
+                            onChange={(e) => setEditForm({ ...editForm, medicationName: e.target.value })}
+                            className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-card-foreground">
+                            Dosage
+                          </label>
+                          <input
+                            type="text"
+                            value={editForm.dosage}
+                            onChange={(e) => setEditForm({ ...editForm, dosage: e.target.value })}
+                            className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
+                          />
+                        </div>
+                        <div>
+                          <label className="mb-1 block text-xs font-medium text-card-foreground">
+                            Time
+                          </label>
+                          <input
+                            type="time"
+                            value={editForm.time}
+                            onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
+                            className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
+                          />
+                        </div>
                       </div>
                       <div>
                         <label className="mb-1 block text-xs font-medium text-card-foreground">
-                          Medication
+                          Notes
                         </label>
                         <input
                           type="text"
-                          value={editForm.medicationName}
-                          onChange={(e) => setEditForm({ ...editForm, medicationName: e.target.value })}
+                          value={editForm.notes || ""}
+                          onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
+                          placeholder="Optional notes..."
                           className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
                         />
                       </div>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-card-foreground">
-                          Dosage
-                        </label>
-                        <input
-                          type="text"
-                          value={editForm.dosage}
-                          onChange={(e) => setEditForm({ ...editForm, dosage: e.target.value })}
-                          className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                      <div>
-                        <label className="mb-1 block text-xs font-medium text-card-foreground">
-                          Time
-                        </label>
-                        <input
-                          type="time"
-                          value={editForm.time}
-                          onChange={(e) => setEditForm({ ...editForm, time: e.target.value })}
-                          className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="mb-1 block text-xs font-medium text-card-foreground">
-                        Notes
-                      </label>
-                      <input
-                        type="text"
-                        value={editForm.notes || ""}
-                        onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })}
-                        placeholder="Optional notes..."
-                        className="w-full rounded-md border border-input bg-card px-3 py-1.5 text-sm text-card-foreground outline-none focus:ring-2 focus:ring-ring"
-                      />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={handleSaveEdit}
-                        className="rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
-                      >
-                        Save
-                      </button>
-                      <button
-                        onClick={handleCancelEdit}
-                        className="rounded-md bg-secondary px-4 py-1.5 text-sm font-semibold text-secondary-foreground hover:opacity-90"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  // View Mode
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <div className="mb-2 flex items-center gap-2">
-                        <h3 className="font-semibold text-card-foreground">{med.studentName}</h3>
-                        <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(med.status)}`}>
-                          {getStatusIcon(med.status)}
-                          {med.time}
-                        </span>
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(med.status)}`}>
-                          {med.status.charAt(0).toUpperCase() + med.status.slice(1)}
-                        </span>
-                      </div>
-                      <p className="text-sm text-card-foreground">
-                        <span className="font-medium">{med.medicationName}</span> - {med.dosage}
-                      </p>
-                      {med.notes && (
-                        <p className="mt-1 text-xs text-muted-foreground">{med.notes}</p>
-                      )}
-                      {med.seenAt && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Seen: {new Date(med.seenAt).toLocaleString()}
-                        </p>
-                      )}
-                      {med.completedAt && (
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Completed: {new Date(med.completedAt).toLocaleString()}
-                        </p>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-2">
-                      <div className="flex items-center gap-1">
-                        {med.status === "pending" && (
-                          <button
-                            onClick={() => handleMarkAsSeen(med.id)}
-                            className="flex items-center gap-2 rounded-full bg-primary/10 px-6 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
-                            title="Mark as Seen"
-                          >
-                            <Eye className="h-4 w-4" />
-                            Seen
-                          </button>
-                        )}
-                        {med.status === "seen" && (
-                          <button
-                            onClick={() => handleMarkAsCompleted(med.id)}
-                            className="flex items-center gap-2 rounded-full bg-success/10 px-6 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20"
-                            title="Mark as Completed"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                            Done
-                          </button>
-                        )}
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => handleEdit(med)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 transition-colors hover:bg-primary/20"
+                          onClick={handleSaveEdit}
+                          className="rounded-md bg-primary px-4 py-1.5 text-sm font-semibold text-primary-foreground hover:opacity-90"
                         >
-                          <Pencil className="h-3.5 w-3.5 text-primary" />
+                          Save
                         </button>
                         <button
-                          onClick={() => onDeleteMedication(med.id)}
-                          className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
+                          onClick={handleCancelEdit}
+                          className="rounded-md bg-secondary px-4 py-1.5 text-sm font-semibold text-secondary-foreground hover:opacity-90"
                         >
-                          <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          Cancel
                         </button>
                       </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            ))
+                  ) : (
+                    // View Mode
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="mb-2 flex items-center gap-2">
+                          <h3 className="font-semibold text-card-foreground">{med.studentName}</h3>
+                          <span className={`flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(status)}`}>
+                            {getStatusIcon(status)}
+                            {med.time}
+                          </span>
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(status)}`}>
+                            {/* ✅ FIX: Use the status variable with default */}
+                            {status.charAt(0).toUpperCase() + status.slice(1)}
+                          </span>
+                        </div>
+                        <p className="text-sm text-card-foreground">
+                          <span className="font-medium">{med.medicationName}</span> - {med.dosage}
+                        </p>
+                        {med.notes && (
+                          <p className="mt-1 text-xs text-muted-foreground">{med.notes}</p>
+                        )}
+                        {med.seenAt && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Seen: {new Date(med.seenAt).toLocaleString()}
+                          </p>
+                        )}
+                        {med.completedAt && (
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Completed: {new Date(med.completedAt).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-1">
+                          {status === "pending" && (
+                            <button
+                              onClick={() => handleMarkAsSeen(med.id)}
+                              className="flex items-center gap-2 rounded-full bg-primary/10 px-6 py-2 text-sm font-medium text-primary transition-colors hover:bg-primary/20"
+                              title="Mark as Seen"
+                            >
+                              <Eye className="h-4 w-4" />
+                              Seen
+                            </button>
+                          )}
+                          {status === "seen" && (
+                            <button
+                              onClick={() => handleMarkAsCompleted(med.id)}
+                              className="flex items-center gap-2 rounded-full bg-success/10 px-6 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20"
+                              title="Mark as Completed"
+                            >
+                              <CheckCircle className="h-4 w-4" />
+                              Done
+                            </button>
+                          )}
+                          <button
+                            onClick={() => handleEdit(med)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 transition-colors hover:bg-primary/20"
+                          >
+                            <Pencil className="h-3.5 w-3.5 text-primary" />
+                          </button>
+                          <button
+                            onClick={() => onDeleteMedication(med.id)}
+                            className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
+                          >
+                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
       </section>

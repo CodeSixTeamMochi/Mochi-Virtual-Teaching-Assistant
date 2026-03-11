@@ -81,3 +81,42 @@ export const api = {
 
   //
 };
+
+//db connection 
+const API_BASE_URL = 'http://127.0.0.1:5000';
+
+export const emergencyContactsAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts`);
+    if (!response.ok) throw new Error('Failed to fetch contacts');
+    return response.json();
+  },
+
+  add: async (contact: { name: string; phone: string; type: string; icon: string }) => {
+    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(contact),
+    });
+    if (!response.ok) throw new Error('Failed to add contact');
+    return response.json();
+  },
+
+  update: async (id: string, contact: { name: string; phone: string; type: string; icon: string }) => {
+    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(contact),
+    });
+    if (!response.ok) throw new Error('Failed to update contact');
+    return response.json();
+  },
+
+  delete: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete contact');
+    return response.json();
+  },
+};

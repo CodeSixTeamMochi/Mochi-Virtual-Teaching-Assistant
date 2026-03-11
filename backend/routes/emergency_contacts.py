@@ -10,21 +10,21 @@ def get_emergency_contacts():
     try:
         cursor = conn.cursor()
         cursor.execute("""
-            SELECT id, name, phone, icon 
+            SELECT id, name, phone, type, icon 
             FROM emergency_contacts 
             ORDER BY id
         """)
         contacts = cursor.fetchall()
         cursor.close()
         
-        # Format response
         contacts_list = []
         for contact in contacts:
             contacts_list.append({
                 "id": str(contact[0]),
                 "name": contact[1],
                 "phone": contact[2],
-                "icon": contact[3]
+                "type": contact[3],
+                "icon": contact[4],
             })
         
         return jsonify(contacts_list), 200
@@ -35,7 +35,7 @@ def get_emergency_contacts():
         release_db_connection(conn)
 
 
-# ADD a new emergency contact
+# POST - Add new contact
 @emergency_contacts_bp.route('/api/emergency-contacts', methods=['POST'])
 def add_emergency_contact():
     conn = get_db_connection()
@@ -43,28 +43,29 @@ def add_emergency_contact():
         data = request.get_json()
         name = data.get('name')
         phone = data.get('phone')
-        icon = data.get('icon', 'hospital')  # default icon
+        contact_type = data.get('type')
+        icon = data.get('icon', 'ambulance')
         
-        # Validate input
-        if not name or not phone:
-            return jsonify({"error": "Name and phone are required"}), 400
+        if not name or not phone or not contact_type:
+            return jsonify({"error": "Name, phone, and type required"}), 400
         
         cursor = conn.cursor()
         cursor.execute("""
-            INSERT INTO emergency_contacts (name, phone, icon)
-            VALUES (%s, %s, %s)
-            RETURNING id
-        """, (name, phone, icon))
+            INSERT INTO emergency_contacts (name, phone, type, icon)
+            VALUES (%s, %s, %s, %s)
+            RETURNING id, name, phone, type, icon
+        """, (name, phone, contact_type, icon))
         
-        new_id = cursor.fetchone()[0]
+        result = cursor.fetchone()
         conn.commit()
         cursor.close()
         
         return jsonify({
-            "id": str(new_id),
-            "name": name,
-            "phone": phone,
-            "icon": icon
+            "id": str(result[0]),
+            "name": result[1],
+            "phone": result[2],
+            "type": result[3],
+            "icon": result[4],
         }), 201
         
     except Exception as e:
@@ -74,31 +75,35 @@ def add_emergency_contact():
         release_db_connection(conn)
 
 
-# UPDATE an emergency contact
+# PUT - Update contact
 @emergency_contacts_bp.route('/api/emergency-contacts/<contact_id>', methods=['PUT'])
 def update_emergency_contact(contact_id):
     conn = get_db_connection()
     try:
         data = request.get_json()
-        name = data.get('name')
-        phone = data.get('phone')
-        icon = data.get('icon')
         
         cursor = conn.cursor()
         cursor.execute("""
             UPDATE emergency_contacts 
-            SET name = %s, phone = %s, icon = %s
+            SET name = %s, phone = %s, type = %s, icon = %s, 
+                updated_at = CURRENT_TIMESTAMP
             WHERE id = %s
-        """, (name, phone, icon, contact_id))
+            RETURNING id, name, phone, type, icon
+        """, (data['name'], data['phone'], data['type'], data['icon'], contact_id))
         
+        result = cursor.fetchone()
         conn.commit()
         cursor.close()
         
+        if not result:
+            return jsonify({"error": "Contact not found"}), 404
+        
         return jsonify({
-            "id": contact_id,
-            "name": name,
-            "phone": phone,
-            "icon": icon
+            "id": str(result[0]),
+            "name": result[1],
+            "phone": result[2],
+            "type": result[3],
+            "icon": result[4],
         }), 200
         
     except Exception as e:
@@ -108,17 +113,21 @@ def update_emergency_contact(contact_id):
         release_db_connection(conn)
 
 
-# DELETE an emergency contact
+# DELETE contact
 @emergency_contacts_bp.route('/api/emergency-contacts/<contact_id>', methods=['DELETE'])
 def delete_emergency_contact(contact_id):
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("DELETE FROM emergency_contacts WHERE id = %s", (contact_id,))
+        cursor.execute("DELETE FROM emergency_contacts WHERE id = %s RETURNING id", (contact_id,))
+        result = cursor.fetchone()
         conn.commit()
         cursor.close()
         
-        return jsonify({"message": "Contact deleted successfully"}), 200
+        if not result:
+            return jsonify({"error": "Contact not found"}), 404
+        
+        return jsonify({"message": "Deleted successfully"}), 200
         
     except Exception as e:
         conn.rollback()

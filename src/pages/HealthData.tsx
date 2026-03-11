@@ -5,53 +5,65 @@ import EmergencyContacts from "@/components/EmergencyContacts";
 import MedicationReminders from "@/components/MedicationReminders";
 import StudentHealthRecords from "@/components/StudentHealthRecords";
 import { 
-  emergencyContacts as initialEmergencyContacts, 
   students as initialStudents, 
   medicationReminders as initialReminders, 
   Student, 
   MedicationReminder,
-  EmergencyContact,} 
-  from "@/Data/mockData";
+  EmergencyContact,
+} from "@/Data/mockData";
+import { emergencyContactsAPI } from "@/services/api";
 
 const STORAGE_KEY_STUDENTS = "mochi_student_health_data";
 const STORAGE_KEY_MEDICATIONS = "mochi_medication_reminders";
-const STORAGE_KEY_EMERGENCY = "mochi_emergency_contacts";
 
 const HealthData = () => {
   const navigate = useNavigate();
   
-  // Load from localStorage or use initial data
+  // Students - still using localStorage
   const [students, setStudents] = useState<Student[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_STUDENTS);
     return saved ? JSON.parse(saved) : initialStudents;
   });
 
-  // Load medication reminders from localStorage or use initial data
+  // Medications - still using localStorage
   const [medications, setMedications] = useState<MedicationReminder[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_MEDICATIONS);
     return saved ? JSON.parse(saved) : initialReminders;
   });
 
-  // Load emergency contacts from localStorage or use initial data
-  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_EMERGENCY);
-    return saved ? JSON.parse(saved) : initialEmergencyContacts;
-  });
+  // Emergency contacts - NOW USING DATABASE
+  const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Save to localStorage whenever students change
+  // Fetch emergency contacts from database on mount
+  useEffect(() => {
+    const fetchEmergencyContacts = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await emergencyContactsAPI.getAll();
+        setEmergencyContacts(data);
+      } catch (err) {
+        console.error("Error fetching emergency contacts:", err);
+        setError("Failed to load emergency contacts");
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchEmergencyContacts();
+  }, []);
+
+  // Save students to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(students));
   }, [students]);
 
-  // Save medications to localStorage whenever they change
+  // Save medications to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_MEDICATIONS, JSON.stringify(medications));
   }, [medications]);
-
-  // Save emergency contacts to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_EMERGENCY, JSON.stringify(emergencyContacts));
-  }, [emergencyContacts]);
 
   // Check for medication reminders and send notifications
   useEffect(() => {
@@ -61,7 +73,6 @@ const HealthData = () => {
       
       medications.forEach((med) => {
         if (med.time === currentTime && med.status === "pending") {
-          // Request notification permission if not granted
           if (Notification.permission === "granted") {
             new Notification("Medication Reminder", {
               body: `${med.studentName} - ${med.medicationName} (${med.dosage})${med.notes ? '\n' + med.notes : ''}`,
@@ -83,15 +94,12 @@ const HealthData = () => {
       });
     };
 
-    // Check every minute
     const interval = setInterval(checkMedications, 60000);
-    // Check immediately on mount
     checkMedications();
-
     return () => clearInterval(interval);
   }, [medications]);
 
-
+  // Student handlers (localStorage)
   const handleUpdateStudent = (updated: Student) => {
     setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
   };
@@ -104,6 +112,7 @@ const HealthData = () => {
     setStudents((prev) => prev.filter((s) => s.id !== studentId));
   };
 
+  // Medication handlers (localStorage)
   const handleAddMedication = (newMedication: MedicationReminder) => {
     setMedications((prev) => [...prev, newMedication]);
   };
@@ -134,25 +143,78 @@ const HealthData = () => {
     );
   };
 
-  const handleUpdateEmergencyContact = (updated: EmergencyContact) => {
-    setEmergencyContacts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+  // Emergency contact handlers (DATABASE)
+  const handleUpdateEmergencyContact = async (updated: EmergencyContact) => {
+    try {
+      await emergencyContactsAPI.update(updated.id, {
+        name: updated.name,
+        phone: updated.phone,
+        type: updated.type,
+        icon: updated.icon,
+      });
+      setEmergencyContacts((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+    } catch (err) {
+      console.error("Error updating contact:", err);
+      alert("Failed to update contact. Please try again.");
+    }
   };
 
-  const handleAddEmergencyContact = (newContact: EmergencyContact) => {
-    setEmergencyContacts((prev) => [...prev, newContact]);
+  const handleAddEmergencyContact = async (newContact: Omit<EmergencyContact, 'id'>) => {
+    try {
+      const added = await emergencyContactsAPI.add(newContact);
+      setEmergencyContacts((prev) => [...prev, added]);
+    } catch (err) {
+      console.error("Error adding contact:", err);
+      alert("Failed to add contact. Please try again.");
+    }
   };
 
-  const handleDeleteEmergencyContact = (contactId: string) => {
-    setEmergencyContacts((prev) => prev.filter((c) => c.id !== contactId));
+  const handleDeleteEmergencyContact = async (contactId: string) => {
+    try {
+      await emergencyContactsAPI.delete(contactId);
+      setEmergencyContacts((prev) => prev.filter((c) => c.id !== contactId));
+    } catch (err) {
+      console.error("Error deleting contact:", err);
+      alert("Failed to delete contact. Please try again.");
+    }
   };
 
   const handleBack = () => {
-    navigate(-1); // Go back to previous page
+    navigate(-1);
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-lg text-muted-foreground">Loading emergency contacts...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-lg text-destructive">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header - Fullscreen */}
+      {/* Header */}
       <header className="sticky top-0 z-10 border-b border-border bg-card px-8 py-4 shadow-sm">
         <div className="flex items-center gap-4">
           <button 
@@ -168,7 +230,7 @@ const HealthData = () => {
         </div>
       </header>
 
-      {/* Content - Fullscreen with padding */}
+      {/* Content */}
       <main className="space-y-6 px-8 py-6">
         <EmergencyContacts 
           contacts={emergencyContacts}
