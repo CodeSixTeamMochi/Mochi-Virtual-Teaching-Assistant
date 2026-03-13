@@ -1,105 +1,78 @@
 import { Lesson, LessonFormData, LessonItem } from '@/types/lesson';
 
-const LESSONS_KEY = 'lessons';
-const COMPLETED_LESSONS_KEY = 'completed_lessons';
-
-// Generate unique ID
-const generateId = (): string => {
-  return Date.now().toString(36) + Math.random().toString(36).substr(2);
-};
+// CHANGED: Added the Base API URL (pointing to your Flask app)
+const API_URL = 'http://localhost:5000/api';
 
 // Get all lessons
-export const getLessons = (): Lesson[] => {
-  const data = localStorage.getItem(LESSONS_KEY);
-  return data ? JSON.parse(data) : [];
+// CHANGED: Now fetches from Backend API instead of localStorage
+export const getLessons = async (): Promise<Lesson[]> => {
+  const response = await fetch(`${API_URL}/lessons`);
+  if (!response.ok) throw new Error('Failed to fetch lessons');
+  return response.json();
 };
 
 // Get single lesson by ID
-export const getLessonById = (id: string): Lesson | undefined => {
-  const lessons = getLessons();
-  return lessons.find(lesson => lesson.id === id);
+// CHANGED: Now fetches a specific ID from the DB
+export const getLessonById = async (id: string): Promise<Lesson | undefined> => {
+  const response = await fetch(`${API_URL}/lessons/${id}`);
+  if (!response.ok) return undefined;
+  return response.json();
 };
 
 // Create new lesson
-export const createLesson = (formData: LessonFormData): Lesson => {
-  const lessons = getLessons();
-  
-  const items: LessonItem[] = formData.items.map((item, index) => ({
-    ...item,
-    id: generateId(),
-    order: index,
-  }));
-
-  const newLesson: Lesson = {
-    id: generateId(),
-    title: formData.title,
-    description: formData.description,
-    coverImage: formData.coverImage,
-    items,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
-
-  lessons.push(newLesson);
-  localStorage.setItem(LESSONS_KEY, JSON.stringify(lessons));
-  
-  return newLesson;
+// CHANGED: Sends a POST request to save data in Neon
+export const createLesson = async (formData: LessonFormData): Promise<Lesson> => {
+  const response = await fetch(`${API_URL}/lessons`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(formData),
+  });
+  if (!response.ok) throw new Error('Failed to create lesson');
+  return response.json();
 };
 
 // Update existing lesson
-export const updateLesson = (id: string, formData: LessonFormData): Lesson | undefined => {
-  const lessons = getLessons();
-  const index = lessons.findIndex(lesson => lesson.id === id);
-  
-  if (index === -1) return undefined;
-
-  const items: LessonItem[] = formData.items.map((item, idx) => ({
-    ...item,
-    id: generateId(),
-    order: idx,
-  }));
-
-  const updatedLesson: Lesson = {
-    ...lessons[index],
-    title: formData.title,
-    description: formData.description,
-    coverImage: formData.coverImage,
-    items,
-    updatedAt: new Date().toISOString(),
-  };
-
-  lessons[index] = updatedLesson;
-  localStorage.setItem(LESSONS_KEY, JSON.stringify(lessons));
-  
-  return updatedLesson;
+// CHANGED: Sends a PUT request to the database
+export const updateLesson = async (id: string, formData: LessonFormData): Promise<Lesson | undefined> => {
+  const response = await fetch(`${API_URL}/lessons/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(formData),
+  });
+  if (!response.ok) return undefined;
+  return response.json();
 };
 
 // Delete lesson
-export const deleteLesson = (id: string): boolean => {
-  const lessons = getLessons();
-  const filtered = lessons.filter(lesson => lesson.id !== id);
-  
-  if (filtered.length === lessons.length) return false;
-  
-  localStorage.setItem(LESSONS_KEY, JSON.stringify(filtered));
-  return true;
+// CHANGED: Sends a DELETE request to remove rows from DB
+export const deleteLesson = async (id: string): Promise<boolean> => {
+  const response = await fetch(`${API_URL}/lessons/${id}`, {
+    method: 'DELETE',
+  });
+  return response.ok;
 };
 
-export const markLessonAsDone = (lessonId: string): void => {
-  const completed = getCompletedLessonIds();
-  if (!completed.includes(lessonId)) {
-    completed.push(lessonId);
-    localStorage.setItem(COMPLETED_LESSONS_KEY, JSON.stringify(completed));
-  }
+// Mark lesson as done
+// CHANGED: Updates the 'is_completed' column in PostgreSQL
+export const markLessonAsDone = async (lessonId: string): Promise<void> => {
+  await fetch(`${API_URL}/lessons/${lessonId}/complete`, {
+    method: 'PATCH',
+  });
 };
 
-export const getCompletedLessonIds = (): string[] => {
-  const data = localStorage.getItem(COMPLETED_LESSONS_KEY);
-  return data ? JSON.parse(data) : [];
+// Get completed lesson IDs
+// CHANGED: Logic is now handled by the 'getLessons' filter on the server side, 
+// but we fetch specific IDs if still needed for the UI
+export const getCompletedLessonIds = async (): Promise<string[]> => {
+  const response = await fetch(`${API_URL}/lessons/completed/ids`);
+  if (!response.ok) return [];
+  return response.json();
 };
 
-export const resetSingleLessonProgress = (lessonId: string): void => {
-  const completed = getCompletedLessonIds();
-  const updated = completed.filter(id => id !== lessonId);
-  localStorage.setItem(COMPLETED_LESSONS_KEY, JSON.stringify(updated));
+// Reset single lesson progress
+// CHANGED: Updates database column 'is_completed' back to FALSE
+export const resetSingleLessonProgress = async (lessonId: string): Promise<void> => {
+  await fetch(`${API_URL}/lessons/${lessonId}/reset`, {
+    method: 'PATCH',
+  });
 };

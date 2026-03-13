@@ -39,18 +39,22 @@ export const generateLessonWithAI = async (
       throw new Error(data.error || 'Failed to generate lesson');
     }
 
-    const formData: LessonFormData = {
+    const lesson: Lesson = {
+      id: data.id,
       title: data.title,
       description: data.description,
       coverImage: data.coverImage || '',
       items: data.items.map((item: any) => ({
+        id: item.id || '',
+        order: item.order || 0,
         name: item.name,
         spokenText: item.spokenText,
         image: item.image || '',
       })),
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
     };
 
-    const lesson = createLesson(formData);
     return { success: true, lesson };
   } catch (error) {
     return {
