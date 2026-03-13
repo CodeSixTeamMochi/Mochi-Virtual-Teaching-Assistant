@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Bell, Plus, Pencil, Trash2, X, Eye, CheckCircle, Clock } from "lucide-react";
 import { MedicationReminder, Student } from "@/Data/mockData";
 import AddMedicationModal from "./AddMedicationModal";
+import NotificationToast from "./NotificationToast";
 
 interface Props {
   medications: MedicationReminder[];
@@ -23,6 +24,12 @@ const MedicationReminders = ({
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<MedicationReminder | null>(null);
+
+  const [notification, setNotification] = useState<{ 
+    title: string; 
+    message: string;
+    type?: "success" | "info" | "completed";
+  } | null>(null);
 
   // Request notification permission on component mount
   useEffect(() => {
@@ -50,11 +57,38 @@ const MedicationReminders = ({
   };
 
   const handleMarkAsSeen = (medicationId: string) => {
+    const med = medications.find(m => m.id === medicationId);
     onUpdateStatus(medicationId, "seen");
+
+    if (med) {
+      setNotification({
+        title: "Medication Reminder Seen",
+        message: `${med.studentName}'s ${med.medicationName} marked as seen`,
+        type: "info"
+      });
+    }
   };
 
   const handleMarkAsCompleted = (medicationId: string) => {
+    const med = medications.find(m => m.id === medicationId);
     onUpdateStatus(medicationId, "completed");
+
+    if (med) {
+      setNotification({
+        title: "Medication Reminder Completed",
+        message: `${med.studentName}'s ${med.medicationName} has been administered`,
+        type: "completed"
+      });
+    }
+  };
+
+  const handleAddMedicationWithNotification = (newMedication: MedicationReminder) => {
+    onAddMedication(newMedication);
+    setNotification({
+      title: "Medication Reminder Added",
+      message: `Reminder set for ${newMedication.studentName} at ${newMedication.time}`,
+      type: "success"
+    });
   };
 
   const getStatusColor = (status: string) => {
@@ -114,7 +148,6 @@ const MedicationReminders = ({
             </div>
           ) : (
             medications.map((med) => {
-              // ✅ FIX: Set default status if missing
               const status = med.status || 'pending';
               
               return (
@@ -216,7 +249,6 @@ const MedicationReminders = ({
                             {med.time}
                           </span>
                           <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${getStatusColor(status)}`}>
-                            {/* ✅ FIX: Use the status variable with default */}
                             {status.charAt(0).toUpperCase() + status.slice(1)}
                           </span>
                         </div>
@@ -285,9 +317,17 @@ const MedicationReminders = ({
       <AddMedicationModal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
-        onAdd={onAddMedication}
+        onAdd={handleAddMedicationWithNotification}
         students={students}
       />
+      {notification && (
+        <NotificationToast
+          title={notification.title}
+          message={notification.message}
+          type={notification.type}
+          onClose={() => setNotification(null)}
+        />
+      )}
     </>
   );
 };
