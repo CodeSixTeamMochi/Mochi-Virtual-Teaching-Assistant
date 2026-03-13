@@ -29,7 +29,7 @@ ALWAYS respond in valid JSON format exactly like this:
   "mochiResponse": "your reply",
   "mood": "HAPPY" | "CELEBRATING" | "ENCOURAGING",
   "speech_error": {
-    "error_type": "Phonetic Substitution",
+    "error_type": "Phonetic Substitution / Vowel Distortion",
     "detected_speech": "wabbit",
     "correction_given": "rabbit"
   }
@@ -47,6 +47,11 @@ GOALS:
 2. IDENTIFY SPEECH ERRORS: Watch for 'f' for 'th', 'w' for 'r', and 'w' for 'l'.
 3. GENTLE CORRECTION: After your natural response, add a gentle correction if you heard a mistake.
    Example: "A wabbit! How cute! I love rabbits too. Try to make a 'rrr' sound with your tongue!"
+4. HYPER-VIGILANT SPEECH DETECTION:
+   - Children often substitute consonants AND distort vowels at the same time.
+   - If you hear a nonsense word like "webbit", "wibbit", or "wabbit", realize they are trying to say "rabbit".
+   - If you hear "wed", "wid", or "wad", realize they are trying to say "red".
+   - Watch for ANY phonetic approximation where 'r' becomes 'w', 'l' becomes 'w', or 'th' becomes 'f'/'s'. Do not treat these as normal words.
 
 SAFETY:
 - Block all violence/scary topics. Redirect to animals or colors.
@@ -103,7 +108,8 @@ def chat_with_mochi():
         return jsonify({
             "transcription": ai_data.get("transcription", ""),
             "mochiResponse": ai_data.get("mochiResponse", ""),
-            "mood": ai_data.get("mood", "HAPPY")
+            "mood": ai_data.get("mood", "HAPPY"),
+            "speech_error": ai_data.get("speech_error", None)
         })
 
     except Exception as e:

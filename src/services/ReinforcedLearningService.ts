@@ -4,6 +4,12 @@ export interface MochiResponse {
     transcription: string;
     mochiResponse: string;
     mood?: 'HAPPY' | 'CELEBRATING' | 'ENCOURAGING' | 'THINKING';
+
+    speech_error?: {
+    error_type: string;
+    detected_speech: string;
+    correction_given: string;
+  } | null;
 }
 
 export interface ChatMessage {
