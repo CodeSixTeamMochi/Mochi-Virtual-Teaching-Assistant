@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus } from 'lucide-react';
-import { getLessons, deleteLesson } from '@/services/storageService';
+import { ArrowLeft, Plus, Loader2, CheckCircle2, LayoutGrid } from 'lucide-react'; // Added Loader2
+import { 
+  getLessons, 
+  deleteLesson, 
+  getCompletedLessonIds, 
+  resetSingleLessonProgress 
+} from '@/services/storageService';
 import { Lesson } from '@/types/lesson';
 import LessonCard from '@/components/lesson/LessonCard';
 import CreateLessonModal from '@/components/lesson/CreateLessonModal';
 import AILessonModal from '@/components/lesson/AILessonModal';
 import { toast } from '@/hooks/use-toast';
-import { CheckCircle2, LayoutGrid } from 'lucide-react';
-import { getCompletedLessonIds,resetSingleLessonProgress } from '@/services/storageService';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -17,10 +20,31 @@ const Index = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isAIModalOpen, setIsAIModalOpen] = useState(false);
   const [completedIds, setCompletedIds] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // NEW: Added loading state
 
+  // CHANGE: Created a helper to refresh all data from the Database/API
+  const refreshData = async () => {
+    try {
+      const [fetchedLessons, fetchedCompleted] = await Promise.all([
+        getLessons(),
+        getCompletedLessonIds()
+      ]);
+      setLessons(fetchedLessons);
+      setCompletedIds(fetchedCompleted);
+    } catch (error) {
+      toast({
+        title: "Database Error",
+        description: "Could not fetch lessons from the cloud.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // CHANGE: useEffect is now calling the async refresh function
   useEffect(() => {
-    setLessons(getLessons());
-    setCompletedIds(getCompletedLessonIds());
+    refreshData();
   }, []);
 
   const handlePlayLesson = (lessonId: string) => {
@@ -31,26 +55,30 @@ const Index = () => {
     navigate(`/EditLesson/${lessonId}`);
   };
 
-  const handleDeleteLesson = (lessonId: string) => {
-    deleteLesson(lessonId);
-    setLessons(getLessons());
-    toast({
-      title: 'Lesson deleted',
-      description: 'The lesson has been removed.',
-    });
+  // CHANGE: Converted to async to wait for Database deletion
+  const handleDeleteLesson = async (lessonId: string) => {
+    const success = await deleteLesson(lessonId);
+    if (success) {
+      await refreshData(); // Refresh list from DB
+      toast({
+        title: 'Lesson deleted',
+        description: 'The lesson has been removed from the database.',
+      });
+    }
   };
 
   const handleCreateLesson = () => {
     navigate('/CreateLesson');
   };
 
-  const handleResetSingle = (lessonId: string) => {
-  resetSingleLessonProgress(lessonId);
-  setCompletedIds(getCompletedLessonIds()); // Refresh the list
-  toast({
-    title: "Lesson Reset",
-    description: "This lesson is now back in your Active list.",
-  });
+  // CHANGE: Converted to async to wait for Database update
+  const handleResetSingle = async (lessonId: string) => {
+    await resetSingleLessonProgress(lessonId);
+    await refreshData(); // Refresh list from DB
+    toast({
+      title: "Lesson Reset",
+      description: "This lesson is now back in your Active list.",
+    });
   };
 
   return (
@@ -59,17 +87,22 @@ const Index = () => {
       <header className="border-b border-border bg-card">
         <div className="flex items-center justify-between px-6 py-4">
           <Button variant="ghost" size="icon" className="text-foreground" onClick={() => navigate('/Home')}>
-            
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <h1 className="text-xl font-bold text-foreground">Activity Library</h1>
-          <div className="w-10" /> {/* Spacer for alignment */}
+          <div className="w-10" />
         </div>
       </header>
 
       {/* Main Content */}
       <main className="p-6">
-        {lessons.length === 0 ? (
+        {isLoading ? (
+          // NEW: Loading state while waiting for Neon DB
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-10 w-10 animate-spin text-primary" />
+            <p className="mt-4 text-muted-foreground">Connecting to cloud database...</p>
+          </div>
+        ) : lessons.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="mb-4 text-6xl">📚</div>
             <h2 className="mb-2 text-xl font-semibold text-foreground">
@@ -102,8 +135,6 @@ const Index = () => {
                     <LessonCard
                       key={lesson.id}
                       lesson={lesson}
-                      
-                      
                       onClick={() => handlePlayLesson(lesson.id)}
                       onEdit={() => handleEditLesson(lesson.id)}
                       onDelete={() => handleDeleteLesson(lesson.id)}
@@ -162,7 +193,7 @@ const Index = () => {
       <AILessonModal
         open={isAIModalOpen}
         onOpenChange={setIsAIModalOpen}
-        onLessonCreated={() => setLessons(getLessons())}
+        onLessonCreated={refreshData} // Updated to refresh from DB
       />
     </div>
   );

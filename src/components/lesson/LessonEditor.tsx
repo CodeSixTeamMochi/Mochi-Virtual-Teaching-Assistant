@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, ImagePlus, Plus, Save, X } from 'lucide-react';
+import { ArrowLeft, ImagePlus, Plus, Save, X, Loader2 } from 'lucide-react';
 import { createLesson, updateLesson, getLessonById } from '@/services/storageService';
 import { LessonFormData } from '@/types/lesson';
 import LessonItemEditor from './LessonItemEditor';
@@ -22,18 +22,52 @@ interface ItemData {
 
 const LessonEditor = ({ lessonId }: LessonEditorProps) => {
   const navigate = useNavigate();
-  const existingLesson = lessonId ? getLessonById(lessonId) : undefined;
 
-  const [title, setTitle] = useState(existingLesson?.title || '');
-  const [description, setDescription] = useState(existingLesson?.description || '');
-  const [coverImage, setCoverImage] = useState(existingLesson?.coverImage || '');
-  const [items, setItems] = useState<ItemData[]>(
-    existingLesson?.items.map(item => ({
-      image: item.image,
-      name: item.name,
-      spokenText: item.spokenText,
-    })) || [{ image: '', name: '', spokenText: '' }]
-  );
+  const [isLoading, setIsLoading] = useState(!!lessonId);
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [coverImage, setCoverImage] = useState('');
+  const [items, setItems] = useState<ItemData[]>([{ image: '', name: '', spokenText: '' }]);
+
+  useEffect(() => {
+    const fetchLesson = async () => {
+      if (lessonId) {
+        try {
+          const lessonData = await getLessonById(lessonId);
+          if (lessonData) {
+            setTitle(lessonData.title || '');
+            setDescription(lessonData.description || '');
+            setCoverImage(lessonData.coverImage || '');
+            if (lessonData.items && lessonData.items.length > 0) {
+              setItems(lessonData.items.map(item => ({
+                image: item.image || '',
+                name: item.name || '',
+                spokenText: item.spokenText || '',
+              })));
+            }
+          } else {
+            toast({
+              title: 'Error',
+              description: 'Lesson not found',
+              variant: 'destructive',
+            });
+            navigate('/LessonPlaneHome');
+          }
+        } catch (error) {
+          toast({
+            title: 'Error',
+            description: 'Failed to load lesson',
+            variant: 'destructive',
+          });
+          navigate('/LessonPlaneHome');
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+
+    fetchLesson();
+  }, [lessonId, navigate]);
 
   const handleCoverImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -62,7 +96,7 @@ const LessonEditor = ({ lessonId }: LessonEditorProps) => {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!title.trim()) {
       toast({
         title: 'Error',
@@ -89,21 +123,30 @@ const LessonEditor = ({ lessonId }: LessonEditorProps) => {
       items: validItems,
     };
 
-    if (lessonId) {
-      updateLesson(lessonId, formData);
+    setIsLoading(true);
+    try {
+      if (lessonId) {
+        await updateLesson(lessonId, formData);
+        toast({
+          title: 'Success',
+          description: 'Lesson updated successfully',
+        });
+      } else {
+        await createLesson(formData);
+        toast({
+          title: 'Success',
+          description: 'Lesson created successfully',
+        });
+      }
+      navigate('/LessonPlaneHome');
+    } catch (error) {
       toast({
-        title: 'Success',
-        description: 'Lesson updated successfully',
+        title: 'Error',
+        description: 'Failed to save lesson',
+        variant: 'destructive',
       });
-    } else {
-      createLesson(formData);
-      toast({
-        title: 'Success',
-        description: 'Lesson created successfully',
-      });
+      setIsLoading(false);
     }
-
-    navigate('/LessonPlaneHome');
   };
 
   return (
@@ -128,9 +171,14 @@ const LessonEditor = ({ lessonId }: LessonEditorProps) => {
         </div>
       </header>
 
-      {/* Form */}
+      {/* Main Content */}
       <main className="mx-auto max-w-3xl p-4 pb-20">
-        <div className="space-y-6">
+        {isLoading ? (
+          <div className="flex h-64 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="space-y-6">
           {/* Cover Image */}
           <div>
             <Label className="text-sm font-medium">Cover Image</Label>
@@ -221,7 +269,8 @@ const LessonEditor = ({ lessonId }: LessonEditorProps) => {
               ))}
             </div>
           </div>
-        </div>
+          </div>
+        )}
       </main>
     </div>
   );

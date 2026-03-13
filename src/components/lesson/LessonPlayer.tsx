@@ -10,6 +10,7 @@ import { toast } from '@/hooks/use-toast';
 import mochiCharacter from '@/assets/mochi-avatar.jpeg';
 import { markLessonAsDone } from '@/services/storageService';
 
+
 const LessonPlayer = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
@@ -18,19 +19,32 @@ const LessonPlayer = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   useEffect(() => {
-    if (id) {
-      const lessonData = getLessonById(id);
-      if (lessonData) {
-        setLesson(lessonData);
-      } else {
-        toast({
-          title: 'Error',
-          description: 'Lesson not found',
-          variant: 'destructive',
-        });
-        navigate('/LessonPlaneHome');
+    const fetchLesson = async () => {
+      if (id) {
+        try {
+          const lessonData = await getLessonById(id);
+          if (lessonData) {
+            setLesson(lessonData);
+          } else {
+            toast({
+              title: 'Error',
+              description: 'Lesson not found',
+              variant: 'destructive',
+            });
+            navigate('/LessonPlaneHome');
+          }
+        } catch (error) {
+          toast({
+            title: 'Error',
+            description: 'Failed to load lesson',
+            variant: 'destructive',
+          });
+          navigate('/LessonPlaneHome');
+        }
       }
-    }
+    };
+    
+    fetchLesson();
     
     // Preload TTS voices
     preloadVoices();
