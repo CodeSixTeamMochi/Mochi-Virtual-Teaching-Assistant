@@ -13,7 +13,7 @@ export default function ChatHistory({ history, scrollRef }: ChatHistoryProps) {
         <span>📜</span> Story So Far
       </h2>
 
-      <div ref={scrollRef} className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-4 scroll-smooth custom-scrollbar">
         {history.length === 0 ? (
           <p className="text-slate-400 italic text-sm mt-4">No messages yet. Say hello!</p>
         ) : (

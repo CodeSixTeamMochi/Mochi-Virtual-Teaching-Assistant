@@ -401,9 +401,21 @@ export default function ReinforcedLearning() {
   return (
     <div className="h-screen w-full flex bg-[#f0f9ff] overflow-hidden relative">
 
-      <div className={`absolute inset-0 z-40 bg-white/40 backdrop-blur-md transition-all duration-700 ease-in-out ${correctionMode !== 'NONE' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} />
+      <div className={`absolute inset-0 z-40 bg-white/40 backdrop-blur-2x1 transition-all duration-700 ease-in-out ${correctionMode !== 'NONE' ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} />
 
-      <ArrowLeft />
+      {correctionMode === 'NONE' ? (
+        <ArrowLeft />
+      ):(
+        <button
+          onClick={closeCorrection}
+          className="absolute top-4 left-4 md:top-6 md:left-6 z-[60] flex items-center justify-center w-12 h-12 rounded-full bg-white/70 hover:bg-white text-slate-700 shadow-sm backdrop-blur-md transition-all hover:scale-105"
+          title="Go back to chat"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-6 h-6 -ml-1">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+          </svg>
+        </button>
+      )}
 
       <Button
         variant="outline"
@@ -415,7 +427,7 @@ export default function ReinforcedLearning() {
       </Button>
     
       {/* LEFT SIDE: HISTORY BAR */}
-      <div className={`h-full flex-shrink-0 z-30 transition-all duration-500 ${correctionMode !== 'NONE' ? 'opacity-20  pointer-events-none' : 'opacity-100'}`}>
+      <div className={`h-full w-[300px] md:w-[350px] flex-shrink-0 z-30 transition-all duration-500 flex flex-col [&>*]:h-full ${correctionMode !== 'NONE' ? 'opacity-20  pointer-events-none' : 'opacity-100'}`}>
         <ChatHistory history={history} scrollRef={scrollRef} />
       </div>
 
@@ -424,7 +436,7 @@ export default function ReinforcedLearning() {
 
         {/* --- CENTERED CORRECTION CARD --- */}
         {correctionMode === 'SHOWING_CARD' && pendingError && (
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[100] animate-in zoom-in-95 duration-500">
+          <div className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-[100] animate-in zoom-in-95 duration-500">
             <CorrectionCard 
               userWord={pendingError.user} 
               targetData={pendingError.target}
@@ -434,48 +446,76 @@ export default function ReinforcedLearning() {
         )}
 
         {/* MOCHI AVATAR WRAPPER */}
-        <div className={`w-full max-w-2xl gap-5 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-50 flex flex-col items-center justify-center
-          ${correctionMode === 'SHOWING_CARD' ? 'absolute bottom-10 left-10 scale-[0.65] origin-bottom-left' : 'scale-100'}
+        <div className={`gap-5 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-50 flex flex-col items-center justify-center
+          ${correctionMode === 'SHOWING_CARD' ? 'absolute bottom-4 left-4 md:bottom-10 md:left-10 scale-[0.60] origin-bottom-left' : 'w-full max-w-2xl scale-100'}
+          ${correctionMode === 'ASKING_YES_NO' ? '-translate-x-[150px] md:-translate-x-[175px]' : 'translate-x-0'}
         `}>
             <MochiAvatar 
               mood={mood} 
               isThinking={isThinking} 
             />
 
-            <div className={`w-full flex justify-center items-start min-h-[4rem] transition-opacity duration-500 ${correctionMode === 'SHOWING_CARD' ? 'opacity-0' : 'opacity-100'}`}>
-              <FeedbackBubble feedback={feedback} mood={mood} />
-            </div>
-
             {/* Manual Accessibility Buttons*/}
-            {correctionMode === 'ASKING_YES_NO' && (
-              <div className="flex gap-4 mt-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
+            {correctionMode === 'ASKING_YES_NO' ? (
+              <div className="flex flex-col items-center justify-center animate-in slide-in-from-bottom-4 fade-in duration-500 mt-4 w-full text-center">
+
+                <div className="mb-8">
+                  <p className="text-2xl text-slate-500 font-semibold mb-2">
+                    I heard <span className="text-rose-400 font-bold">"{pendingError?.user}"</span>...
+                  </p>
+
+                  <h2 className="text-4xl md:text-5xl font-extrabold text-slate-800 tracking-tight">
+                    Did you mean <span className="text-[#fb923c]">"{pendingError?.target.word}"</span>?
+                  </h2>
+
+                </div>
+
+                <div className="flex gap-4 justify-center">
+                  <Button
+                    onClick={() => handleYesNoResult(true)}
+                    className="bg-[#fb923c] hover:bg-[#f97316] text-white font-bold py-6 px-12 rounded-full text-xl shadow-lg shadow-orange-500/20 hover:scale-105 transition-all"
+                  >
+                    👍 Yes
+                  </Button>
+                  <Button
+                    onClick={() => handleYesNoResult(false)}
+                    className="bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 font-bold py-6 px-12 rounded-full text-xl shadow-sm hover:scale-105 transition-all"
+                  >
+                    👎 No
+                  </Button>
+                </div>
+
+                {/* Back Button */}
                 <Button
-                  onClick={() => handleYesNoResult(true)}
-                  className="bg-emerald-500 hover:bg-emerald-600 text-white font-black py-6 px-10 rounded-full text-xl shadow-lg hover:scale-105 transition-all"
+                  variant="ghost"
+                  onClick={closeCorrection}
+                  className="mt-6 text-slate-400 hover:text-slate-600 font-medium"
                 >
-                  👍 Yes
-                </Button>
-                <Button
-                  onClick={() => handleYesNoResult(false)}
-                  className="bg-rose-400 hover:bg-rose-500 text-white font-black py-6 px-10 rounded-full text-xl shadow-lg hover:scale-105 transition-all"
-                >
-                  👎 No
+                  Cancel & Go Back
                 </Button>
               </div>
-            )}
 
-            {/* Hide the microphone pill during focus mode */}
-            {correctionMode === 'NONE' && (
-            <div className="w-full flex justify-center mt-4">
-              <InteractionPill 
-                isThinking={isThinking}
-                isRecording={isRecording}
-                startRecording={startRecording}
-                stopRecording={stopRecording}
-                mood={mood}
-              />
-            </div>
-          )}
+            ) : (
+
+              <div className={`w-full flex flex-col items-center transition-opacity duration-500 ${correctionMode === 'SHOWING_CARD' ? 'opacity-0' : 'opacity-100'}`}>
+
+                <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight mb-4 text-center">Hello! I'm Mochi</h1>
+
+                <div className="w-full flex justify-center items-start min-h-[4rem]">
+                  <FeedbackBubble feedback={feedback} mood={mood} />
+                </div>
+
+                <div className="w-full flex justify-center mt-4">
+                  <InteractionPill 
+                    isThinking={isThinking}
+                    isRecording={isRecording}
+                    startRecording={startRecording}
+                    stopRecording={stopRecording}
+                    mood={mood}
+                  />
+                </div>
+              </div>
+            )}
 
         </div>
       </div>

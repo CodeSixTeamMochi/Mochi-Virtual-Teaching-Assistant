@@ -23,11 +23,6 @@ export default function MochiAvatar({ mood, isThinking }: MochiAvatarProps) {
                     <div className="absolute -top-4 right-10 text-5xl animate-bounce">⭐</div>
                 )}
             </div>
-
-            <h1 className="text-5xl font-extrabold text-[#334155] mt-6 tracking-tight">
-                {isThinking ? "Thinking..." : "Hello! I'm Mochi"}
-            </h1>
-
         </div>
     );
 }
