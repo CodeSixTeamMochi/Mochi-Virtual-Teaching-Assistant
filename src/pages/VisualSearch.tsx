@@ -1,9 +1,10 @@
 import { useState, useCallback } from 'react';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, BookOpen } from 'lucide-react';
 import MochiGreeting from '@/components/visualSearch/MochiGreeting';
 import VisualSearchBar from '@/components/visualSearch/VisualSearchBar';
 import SearchResultsPanel from '@/components/visualSearch/SearchResultsPanel';
 import GenerateWithMochiPanel from '@/components/visualSearch/GenerateWithMochiPanel';
+import ImageLibrary from '@/components/visualSearch/ImageLibrary'; 
 import {
   getSearchResults,      
   generateAIContent,
@@ -26,6 +27,7 @@ const VisualSearch = () => {
   
   const [selectedResult, setSelectedResult] = useState<VisualResult | null>(null);
   const [showResults, setShowResults] = useState(false);
+  const [showLibrary, setShowLibrary] = useState(false);
 
   /**
    * Handle search action (Connects to Google Search API)
@@ -104,6 +106,28 @@ const VisualSearch = () => {
     setGeneratedContent(null);
   }, []);
 
+// --- LIBRARY VIEW ---
+  if (showLibrary) {
+    return (
+      <div className="min-h-screen bg-sky-50 flex flex-col relative">
+        <div className="p-4 border-b border-border/50 bg-white flex items-center justify-between shadow-sm z-10">
+          <button
+            onClick={() => setShowLibrary(false)}
+            className="p-2 rounded-full hover:bg-muted transition-colors"
+          >
+            <ArrowLeft className="w-5 h-5 text-foreground" />
+          </button>
+          <h2 className="font-bold text-slate-800 text-lg">My Mochi Scrapbook</h2>
+          <div className="w-9" /> {/* Spacer to keep title centered */}
+        </div>
+        
+        <div className="flex-1 overflow-y-auto">
+          <ImageLibrary />
+        </div>
+      </div>
+    );
+  }
+
   /// Home view with greeting
   if (!showResults) {
     return (
@@ -114,6 +138,15 @@ const VisualSearch = () => {
             className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
           >
             <ArrowLeft className="w-6 h-6" />
+          </button>
+        </div>
+        {/* NEW LIBRARY BUTTON */}
+        <div className="absolute top-6 right-6 z-20">
+          <button 
+            onClick={() => setShowLibrary(true)} 
+            className="flex items-center gap-2 px-4 py-2 bg-white text-sky-600 font-bold rounded-full shadow-sm hover:shadow-md hover:scale-105 transition-all"
+          >
+            <BookOpen className="w-5 h-5" /> Library
           </button>
         </div>
 
@@ -144,6 +177,14 @@ const VisualSearch = () => {
           aria-label="Go back"
         >
           <ArrowLeft className="w-5 h-5 text-foreground" />
+        </button>
+
+        {/* NEW LIBRARY BUTTON */}
+        <button 
+          onClick={() => setShowLibrary(true)} 
+          className="flex items-center gap-2 px-4 py-1.5 bg-sky-100 text-sky-600 font-bold rounded-full hover:bg-sky-200 transition-all text-sm"
+        >
+          <BookOpen className="w-4 h-4" /> View Library
         </button>
       </div>
 
