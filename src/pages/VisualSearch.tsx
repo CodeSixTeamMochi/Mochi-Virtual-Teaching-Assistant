@@ -167,10 +167,10 @@ const VisualSearch = () => {
     );
   }
 
-  // Results view with two-column layout
+ // Results view with two-column layout
   return (
     <div className="min-h-screen bg-sky-50 flex flex-col relative">
-      <div className="p-4 border-b border-border/50">
+      <div className="p-4 border-b border-border/50 flex items-center justify-between">
         <button
           onClick={handleBack}
           className="p-2 rounded-full hover:bg-muted transition-colors"
@@ -182,7 +182,7 @@ const VisualSearch = () => {
         {/* NEW LIBRARY BUTTON */}
         <button 
           onClick={() => setShowLibrary(true)} 
-          className="flex items-center gap-2 px-4 py-1.5 bg-sky-100 text-sky-600 font-bold rounded-full hover:bg-sky-200 transition-all text-sm"
+          className="flex items-center gap-2 px-4 py-1.5 bg-sky-100 text-sky-600 font-bold rounded-full hover:bg-sky-200 transition-all text-sm shadow-sm"
         >
           <BookOpen className="w-4 h-4" /> View Library
         </button>

@@ -28,6 +28,27 @@ const ImageLibrary = () => {
 
     fetchLibrary();
   }, []);
+
+  const handleDelete = async (urlToDelete: string) => {
+    // Optimistically remove it from the UI immediately so it feels snappy
+    setAssets((prevAssets) => prevAssets.filter((asset) => asset.url !== urlToDelete));
+
+    try {
+      const response = await fetch('http://localhost:5000/api/library/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: urlToDelete }),
+      });
+
+      if (!response.ok) {
+        console.error("Failed to delete from database");
+        // If it fails, you could technically refresh the list here to bring it back
+      }
+    } catch (error) {
+      console.error("Error deleting image:", error);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full max-w-[1000px] mx-auto py-8 px-4 flex flex-col items-center justify-center text-sky-500 animate-pulse">
@@ -98,7 +119,13 @@ const ImageLibrary = () => {
                 </p>
               </div>
               
-             
+             <button 
+                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                title="Remove from Scrapbook"
+                onClick={() => handleDelete(asset.url)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
             </div>
           </div>
         ))}

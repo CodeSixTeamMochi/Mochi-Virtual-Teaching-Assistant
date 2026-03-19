@@ -1,15 +1,17 @@
+import { useState } from 'react';
 import { Play, Image, Film, ExternalLink, Heart } from 'lucide-react';
 import type { VisualResult } from '@/services/visualSearchService';
 
 interface VisualResultCardProps {
   result: VisualResult;
   onClick?: (result: VisualResult) => void;
+  searchQuery?: string;
 }
 
 /**
  * VisualResultCard Component - Universal Edition
  */
-const VisualResultCard = ({ result, onClick }: VisualResultCardProps) => {
+const VisualResultCard = ({ result, onClick, searchQuery = "Mochi Discovery" }: VisualResultCardProps) => {
   const { 
     title, 
     type, 
@@ -22,7 +24,43 @@ const VisualResultCard = ({ result, onClick }: VisualResultCardProps) => {
     photographerUrl 
   } = result as any;
 
+  // 4. Added state for the save button
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+
   const displayImage = imageUrl || thumbnail;
+
+    /**
+   * 5. The Database Save Function
+   */
+  const handleSaveClick = async (e: React.MouseEvent) => {
+    // CRITICAL: This stops the main card from opening the full-screen modal when the heart is clicked
+    e.stopPropagation(); 
+    
+    if (isSaved || isSaving) return;
+
+    setIsSaving(true);
+
+    try {
+      const response = await fetch('http://localhost:5000/api/library/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: displayImage || link,
+          query: searchQuery,
+          student_id: 1 // Link this to actual user auth later
+        }),
+      });
+
+      if (response.ok) {
+        setIsSaved(true); // Turns the heart red!
+      }
+    } catch (err) {
+      console.error("Failed to save image to database:", err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   /**
    * BADGE CONFIGURATION
@@ -61,41 +99,33 @@ const VisualResultCard = ({ result, onClick }: VisualResultCardProps) => {
           <BadgeIcon className="w-3 h-3 mr-1.5 fill-current" />
           {badge.label}
         </div>
-      </div>
 
-      {/* CONTENT AREA */}
+        {/* 6. NEW FLOATING SAVE BUTTON (Top Right) */}
+        <button
+          onClick={handleSaveClick}
+          disabled={isSaving}
+          className="absolute top-2.5 right-2.5 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-lg hover:scale-110 transition-all duration-200 z-10 active:scale-95 border border-slate-100"
+          title="Save to Scrapbook"
+        >
+          <Heart 
+            className={`w-4 h-4 transition-colors duration-300 ${
+              isSaved 
+                ? 'fill-red-500 text-red-500 drop-shadow-sm' 
+                : 'text-slate-400 hover:text-red-400'
+            } ${isSaving ? 'animate-pulse' : ''}`} 
+          />
+        </button>
+      </div>
       <div className="p-4 pt-1 flex-1 flex flex-col">
-        <h3 className="text-[14px] font-extrabold text-foreground line-clamp-1 group-hover:text-primary transition-colors leading-tight tracking-tight">
-          {title}
-        </h3>
-        
-        {/* FOOTER - Updated with attribution logic */}
-        <div className="mt-auto pt-3 flex items-center justify-between border-t border-slate-50">
-          <div className="flex items-center gap-1.5 overflow-hidden">
-            {photographerName ? (
-              /* UPDATED: Unsplash Attribution UI */
-              <>
-                
-                <a 
-                  href={`${photographerUrl}${utmParams}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-[10px] text-muted-foreground truncate font-bold hover:text-primary transition-colors"
-                  onClick={(e) => e.stopPropagation()} 
-                >
-                  
-                </a>
-              </>
-            ) : (
-              /* ORIGINAL: Google/Fallback Source UI */
-              <span className="text-[10px] text-muted-foreground truncate max-w-[120px] font-bold lowercase">
-                {link?.replace('https://', '').replace('www.', '').split('/')[0]}
-              </span>
-            )}
-          </div>
-          <div className="p-1.5 bg-slate-50 rounded-full group-hover:bg-primary/10 transition-colors">
+        <div className="mt-2 flex items-center gap-2">
+          <div className="shrink-0 p-1.5 bg-slate-50 rounded-full group-hover:bg-primary/10 transition-colors">
             <ExternalLink className="w-3 h-3 text-primary opacity-0 group-hover:opacity-100 transition-all duration-300" />
           </div>
+
+          {/* Title follows the icon */}
+          <h3 className="text-[14px] font-extrabold text-foreground line-clamp-1 group-hover:text-primary transition-colors leading-tight tracking-tight first-letter:uppercase lowercase">
+            {title}
+          </h3>
         </div>
       </div>
     </div>

@@ -68,3 +68,78 @@ def track_download():
             logger.warning(f"Tracking failed: {e}")
             
     return jsonify({"status": "ignored"}), 200
+
+@api_bp.route('/library/save', methods=['POST', 'OPTIONS'])
+def save_to_library():
+    # 1. Handle CORS preflight check
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+        
+    from db import get_db_connection, release_db_connection
+    data = request.get_json(silent=True) or {}
+    conn = get_db_connection()
+    
+    try:
+        cursor = conn.cursor()
+        # Using 'generated_search' to match your DB CHECK constraint
+        cursor.execute("""
+            INSERT INTO media_assets (file_url, asset_type, search_query, student_id)
+            VALUES (%s, %s, %s, %s);
+        """, (data.get('url'), 'generated_search', data.get('query'), 1))
+        
+        conn.commit()
+        cursor.close()
+        return jsonify({"status": "success", "url": data.get('url')}), 201
+        
+    except Exception as e:
+        logger.error(f"SAVE ERROR: {e}") 
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        release_db_connection(conn)
+
+@api_bp.route('/library', methods=['GET'])
+def get_library():
+    from db import get_db_connection, release_db_connection
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        # Fetches saved treasures
+        cursor.execute("SELECT file_url, search_query FROM media_assets")
+        rows = cursor.fetchall()
+        cursor.close()
+        
+        # Mapping for React: Using URL as the unique ID
+        assets = [{"id": r[0], "url": r[0], "query": r[1]} for r in rows]
+        return jsonify(assets)
+    except Exception as e:
+        logger.error(f"GET ERROR: {e}") 
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        release_db_connection(conn)
+
+@api_bp.route('/library/delete', methods=['DELETE', 'OPTIONS'])
+def delete_from_library():
+    if request.method == 'OPTIONS':
+        return jsonify({"status": "ok"}), 200
+        
+    from db import get_db_connection, release_db_connection
+    data = request.get_json(silent=True) or {}
+    url = data.get('url')
+    
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            DELETE FROM media_assets 
+            WHERE file_url = %s AND student_id = %s;
+        """, (url, 1))
+        
+        conn.commit()
+        cursor.close()
+        return jsonify({"status": "success", "message": "Image deleted!"}), 200
+        
+    except Exception as e:
+        logger.error(f"DELETE ERROR: {e}") 
+        return jsonify({"status": "error", "message": str(e)}), 500
+    finally:
+        release_db_connection(conn)
