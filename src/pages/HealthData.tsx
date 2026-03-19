@@ -6,30 +6,26 @@ import MedicationReminders from "@/components/MedicationReminders";
 import StudentHealthRecords from "@/components/StudentHealthRecords";
 import { 
   students as initialStudents, 
-  medicationReminders as initialReminders, 
   Student, 
   MedicationReminder,
   EmergencyContact,
 } from "@/Data/mockData";
-import { emergencyContactsAPI } from "@/services/api";
+import { emergencyContactsAPI, medicationsAPI } from "@/services/api";
 
 const STORAGE_KEY_STUDENTS = "mochi_student_health_data";
-const STORAGE_KEY_MEDICATIONS = "mochi_medication_reminders";
 
 const HealthData = () => {
   const navigate = useNavigate();
   
-  // Students - still using localStorage
+  // Students - still using localStorage (will connect later)
   const [students, setStudents] = useState<Student[]>(() => {
     const saved = localStorage.getItem(STORAGE_KEY_STUDENTS);
     return saved ? JSON.parse(saved) : initialStudents;
   });
 
-  // Medications - still using localStorage
-  const [medications, setMedications] = useState<MedicationReminder[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_MEDICATIONS);
-    return saved ? JSON.parse(saved) : initialReminders;
-  });
+  // Medications - NOW USING DATABASE
+  const [medications, setMedications] = useState<MedicationReminder[]>([]);
+  const [medicationsLoading, setMedicationsLoading] = useState(true);
 
   // Emergency contacts - NOW USING DATABASE
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
@@ -55,15 +51,27 @@ const HealthData = () => {
     fetchEmergencyContacts();
   }, []);
 
+  // Fetch medications from database on mount
+  useEffect(() => {
+    const fetchMedications = async () => {
+      try {
+        setMedicationsLoading(true);
+        const data = await medicationsAPI.getAll();
+        setMedications(data);
+      } catch (err) {
+        console.error("Error fetching medications:", err);
+      } finally {
+        setMedicationsLoading(false);
+      }
+    };
+    
+    fetchMedications();
+  }, []);
+
   // Save students to localStorage
   useEffect(() => {
     localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(students));
   }, [students]);
-
-  // Save medications to localStorage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_MEDICATIONS, JSON.stringify(medications));
-  }, [medications]);
 
   // Check for medication reminders and send notifications
   useEffect(() => {
@@ -100,47 +108,63 @@ const HealthData = () => {
   }, [medications]);
 
   // Student handlers (localStorage)
-  // const handleUpdateStudent = (updated: Student) => {
-  //   setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-  // };
-
   const handleAddStudent = (newStudent: Student) => {
     setStudents((prev) => [...prev, newStudent]);
   };
 
-  // const handleDeleteStudent = (studentId: string) => {
-  //   setStudents((prev) => prev.filter((s) => s.id !== studentId));
-  // };
-
-  // Medication handlers (localStorage)
-  const handleAddMedication = (newMedication: MedicationReminder) => {
-    setMedications((prev) => [...prev, newMedication]);
+  // Medication handlers (DATABASE)
+  const handleAddMedication = async (newMedication: MedicationReminder) => {
+    try {
+      const added = await medicationsAPI.add({
+        studentName: newMedication.studentName,
+        medicationName: newMedication.medicationName,
+        dosage: newMedication.dosage,
+        time: newMedication.time,
+        notes: newMedication.notes,
+      });
+      setMedications((prev) => [...prev, added]);
+    } catch (err) {
+      console.error("Error adding medication:", err);
+      alert("Failed to add medication. Please try again.");
+    }
   };
 
-  const handleUpdateMedication = (updated: MedicationReminder) => {
+  const handleUpdateMedication = async (updated: MedicationReminder) => {
+    // For now, just update locally (can add API endpoint later if needed)
     setMedications((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
   };
 
   const handleDeleteMedication = (medicationId: string) => {
+    // Not used anymore, but keeping for compatibility
     setMedications((prev) => prev.filter((m) => m.id !== medicationId));
   };
 
-  const handleUpdateMedicationStatus = (medicationId: string, status: "pending" | "seen" | "completed") => {
-    setMedications((prev) => 
-      prev.map((m) => {
-        if (m.id === medicationId) {
-          const updated = { ...m, status };
-          if (status === "seen" && !m.seenAt) {
-            updated.seenAt = new Date().toISOString();
+  const handleUpdateMedicationStatus = async (
+    medicationId: string,
+    status: "pending" | "seen" | "completed"
+  ) => {
+    try {
+      await medicationsAPI.updateStatus(medicationId, status);
+      
+      setMedications((prev) =>
+        prev.map((m) => {
+          if (m.id === medicationId) {
+            const updated = { ...m, status };
+            if (status === "seen" && !m.seenAt) {
+              updated.seenAt = new Date().toISOString();
+            }
+            if (status === "completed" && !m.completedAt) {
+              updated.completedAt = new Date().toISOString();
+            }
+            return updated;
           }
-          if (status === "completed" && !m.completedAt) {
-            updated.completedAt = new Date().toISOString();
-          }
-          return updated;
-        }
-        return m;
-      })
-    );
+          return m;
+        })
+      );
+    } catch (err) {
+      console.error("Error updating medication status:", err);
+      alert("Failed to update status. Please try again.");
+    }
   };
 
   // Emergency contact handlers (DATABASE)
@@ -184,12 +208,12 @@ const HealthData = () => {
   };
 
   // Show loading state
-  if (loading) {
+  if (loading || medicationsLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-lg text-muted-foreground">Loading emergency contacts...</p>
+          <p className="text-lg text-muted-foreground">Loading health data...</p>
         </div>
       </div>
     );

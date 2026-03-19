@@ -23,13 +23,15 @@ const AddMedicationModal = ({ isOpen, onClose, onAdd, students }: Props) => {
     
     if (studentName && medicationName.trim() && dosage.trim() && time) {
       const newMedication: MedicationReminder = {
-        id: `med-${Date.now()}`,
+        id: `med-${Date.now()}`, // Temporary ID, backend will replace with schedule_id
         studentName,
         medicationName: medicationName.trim(),
         dosage: dosage.trim(),
         time,
-        notes: notes.trim() || undefined,
+        notes: notes.trim() || "",
         status: "pending",
+        seenAt: undefined,
+        completedAt: undefined,
       };
       
       onAdd(newMedication);
@@ -70,11 +72,15 @@ const AddMedicationModal = ({ isOpen, onClose, onAdd, students }: Props) => {
               className="w-full rounded-lg border border-input bg-background px-4 py-2 text-card-foreground outline-none focus:ring-2 focus:ring-ring"
               required
             >
-              {students.map((student) => (
-                <option key={student.id} value={student.name}>
-                  {student.name}
-                </option>
-              ))}
+              {students.length === 0 ? (
+                <option value="">No students available</option>
+              ) : (
+                students.map((student) => (
+                  <option key={student.id} value={student.name}>
+                    {student.name}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -135,7 +141,8 @@ const AddMedicationModal = ({ isOpen, onClose, onAdd, students }: Props) => {
           <div className="flex gap-3 pt-2">
             <button
               type="submit"
-              className="flex-1 rounded-full py-2.5 font-semibold transition-opacity hover:opacity-90"
+              disabled={students.length === 0}
+              className="flex-1 rounded-full py-2.5 font-semibold transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ 
                 backgroundColor: 'hsl(var(--notification))',
                 color: 'hsl(var(--notification-foreground))'

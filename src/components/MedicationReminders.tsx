@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, Plus, Pencil, Trash2, X, Eye, CheckCircle, Clock } from "lucide-react";
+import { Bell, Plus, Pencil, X, Eye, CheckCircle, Clock } from "lucide-react";
 import { MedicationReminder, Student } from "@/Data/mockData";
 import AddMedicationModal from "./AddMedicationModal";
 import NotificationToast from "./NotificationToast";
@@ -294,21 +294,14 @@ const MedicationReminders = ({
 
                           {status === "pending" && (
                             <button
-                            onClick={() => handleEdit(med)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 transition-colors hover:bg-primary/20"
+                              onClick={() => handleEdit(med)}
+                              className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 transition-colors hover:bg-primary/20"
                             >
                               <Pencil className="h-3.5 w-3.5 text-primary" />
                             </button>
                           )}
-                          
 
-                          {/* If admin use, comment out to use the feature */}
-                          {/* <button
-                            onClick={() => onDeleteMedication(med.id)}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
-                          >
-                            <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </button> */}
+                          {/* ❌ REMOVED: Delete button - medications cannot be deleted */}
                         </div>
                       </div>
                     </div>

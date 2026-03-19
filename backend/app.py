@@ -14,6 +14,9 @@ app.register_blueprint(emergency_contacts_bp)
 app.register_blueprint(medications_bp)  
 # Register students blueprint
 app.register_blueprint(students_bp)  
+# Register classrooms blueprint
+app.register_blueprint(classrooms_bp)  
+
 
 
 @app.route('/')
