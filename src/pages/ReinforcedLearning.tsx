@@ -19,11 +19,14 @@ export default function ReinforcedLearning() {
   const [correctionMode, setCorrectionMode] = useState<CorrectionMode>('NONE');
   const [pendingError, setPendingError] = useState<{user: string, target: WordData} | null>(null);
   const [mistakeList, setMistakeList] = useState<{user: string, target: WordData}[]>([]);
-
   const mediaRecorder = useRef<any>(null);
   const audioContextRef = useRef<any>(null);
   const wakeWordRecognition = useRef<any>(null);
   const yesNoRecognition = useRef<any>(null); // Dedicated listener for quick Yes/No
+  const correctionRecognition = useRef<any>(null); // Dedicated listener for correction attempts
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
+  const isCorrectingRef = useRef<boolean>(false);
+  const attemptCountRef = useRef<number>(0);
   const audioChunks = useRef<BlobPart[]>([]);
   const [isThinking, setIsThinking] = useState(false);
   const navigate = useNavigate();
@@ -41,6 +44,7 @@ export default function ReinforcedLearning() {
 
      const naturalText = cleanTextForNaturalSpeech(text);
      const utterance = new SpeechSynthesisUtterance(naturalText);
+     utteranceRef.current = utterance;
 
      const voices = synth.getVoices();
      const friendlyVoice = voices.find(v =>
@@ -76,6 +80,96 @@ export default function ReinforcedLearning() {
     }
   }, [history]);
 
+  const listenForCorrection = (targetWord: string) => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    correctionRecognition.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = false;
+    recognition.lang = 'en-US';
+
+     recognition.maxAlternatives = 3;
+
+    recognition.onstart = () => {
+      setFeedback("Listening...");
+    };
+
+    recognition.onresult = (event: any) => {
+       // Flip the switch OFF so the mic doesn't restart while Mochi is talking!
+      isCorrectingRef.current = false;
+
+      if (!event.results || !event.results[0]) return;
+
+      let foundMatch = false;
+      const primaryGuess = event.results[0][0].transcript.toLowerCase().replace(/[.,!?]/g, '').trim();
+
+      // Check ALL 3 of Chrome's alternatives to see if the target word is hiding in there
+      for (let i = 0; i < event.results[0].length; i++) {
+        const alt = event.results[0][i].transcript.toLowerCase();
+        if(alt.includes(targetWord.toLowerCase())) {
+          foundMatch = true;
+          break;
+        }
+      }
+
+      console.log(`Chrome's primary guess: "${primaryGuess}" | Target: "${targetWord}"`);
+
+       if (foundMatch) {
+        // SUCCESS LOOP
+        setMood("CELEBRATING");
+        setFeedback("You did it! Great job! ⭐");
+        speakMochi(`You did it! Great job saying ${targetWord}!`, () => {
+          // Wait 2 seconds, then return to normal chat
+          setTimeout(() => {
+            closeCorrection();
+          }, 2500);
+        });
+      } else {
+         // TRY AGAIN LOOP
+        attemptCountRef.current += 1;
+
+        if (attemptCountRef.current >= 3) {
+          setMood("HAPPY");
+          setFeedback("Good effort! We'll practice later. 🌟");
+          speakMochi(`That is okay! You are doing a wonderful job. We can practice ${targetWord} later!`, () => {
+            setTimeout(() => { closeCorrection(); }, 3000);
+          });
+        } else {
+          setMood("ENCOURAGING");
+          setFeedback(`I heard "${primaryGuess}". Let's try again!`);
+          speakMochi(`Almost! I heard ${primaryGuess}. Let's try again. Can you say ${targetWord}?`, () => {
+            isCorrectingRef.current = true;
+            listenForCorrection(targetWord);
+          });
+        }
+      }
+    };
+
+    recognition.onerror = (event: any) => {
+      console.log("Mic error code:", event.error);
+
+      if (event.error === 'no-speech') {
+        setFeedback("Listening... (Speak up so I can hear you!)");
+      } else if (event.error === 'no-match') {
+        setFeedback("That sounded tricky! Try saying it again.");
+      }
+    };
+
+    recognition.onend = () => {
+      if (isCorrectingRef.current) {
+        console.log("Mic went silent. Auto-restarting...");
+        setTimeout(() => { listenForCorrection(targetWord); }, 200);
+      }
+    };
+
+    try { 
+      recognition.start(); 
+    } catch (e) {}
+
+  };
+
   const handleYesNoResult = (isYes: boolean) => {
     // Stop the listener if it's running
     if (yesNoRecognition.current) {
@@ -84,15 +178,20 @@ export default function ReinforcedLearning() {
       } catch (e) {}
     }
 
-    if (isYes) {
+    if (isYes && pendingError) {
       setCorrectionMode('SHOWING_CARD');
-      const targetSoundInfo = pendingError?.target.targetSound.includes('r') ? "'rrr'" : `'${pendingError?.target.targetSound}'`;
+      isCorrectingRef.current = false; // Ensure mic is off while Mochi explains
+      attemptCountRef.current = 0; 
 
-      speakMochi(`Awesome! Can you say ${pendingError?.target.word} again, with a ${targetSoundInfo} sound?`, () => {
-        setFeedback("Try saying it again!");
+      const targetLetter = pendingError.target.targetSound.toUpperCase();
+
+      speakMochi(`Awesome! Can you say ${pendingError.target.word} again, focusing on the ${targetLetter} sound?`, () => {
         setMood("ENCOURAGING");
+        // Flip the switch ON and start the listening loop
+        isCorrectingRef.current = true;
+        listenForCorrection(pendingError.target.word);
       });
-    }else {
+    } else {
       setCorrectionMode('NONE');
       setPendingError(null);
       setMood("HAPPY");
@@ -100,7 +199,7 @@ export default function ReinforcedLearning() {
         setFeedback("What were we talking about?");
       });
     }
-  }
+  };
 
   const listenForYesNo = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -112,11 +211,13 @@ export default function ReinforcedLearning() {
     recognition.interimResults = false;
     recognition.lang = 'en-US';
 
+
     setFeedback("Listening for Yes or No...");
+    
 
     recognition.onresult = (event: any) => {
+
       const transcript = event.results[0][0].transcript.toLowerCase();
-      console.log("Child answered:", transcript);
 
       if (transcript.includes('yes') || transcript.includes('yeah') || transcript.includes('yep')) {
         // Child confirmed the mistake!
@@ -338,13 +439,7 @@ export default function ReinforcedLearning() {
       const res = await chatWithMochi(blob, history);
       const { transcription, mochiResponse, mood: aiMood, speech_error } = res;
 
-      const lowerText = (transcription || "").toLowerCase();
-      console.log("User said:", lowerText);
-
        if (speech_error && correctionMode === 'NONE') {
-
-        console.log("AI Detected an error! Triggering card for:", speech_error.correction_given);
-
         // Look up the correct word in your phonetic dictionary
         const breakdown = getPhoneticBreakdown(speech_error.correction_given.toLowerCase());
 
@@ -391,10 +486,16 @@ export default function ReinforcedLearning() {
   };
   
   const closeCorrection = () => {
+    isCorrectingRef.current = false; // IMMEDIATELY kill the infinite loop
+    if (correctionRecognition.current) {
+      try { 
+        correctionRecognition.current.stop(); 
+      } catch (e) {}
+    }
     setCorrectionMode('NONE');
     setPendingError(null);
     setFeedback("Let's keep chatting!");
-    speakMochi("Great job! You're a star.");
+    speakMochi("What were we talking about?");
 
   };
   
@@ -456,7 +557,7 @@ export default function ReinforcedLearning() {
             />
 
             {/* Manual Accessibility Buttons*/}
-            {correctionMode === 'ASKING_YES_NO' ? (
+            {correctionMode === 'ASKING_YES_NO' && (
               <div className="flex flex-col items-center justify-center animate-in slide-in-from-bottom-4 fade-in duration-500 mt-4 w-full text-center">
 
                 <div className="mb-8">
@@ -494,27 +595,37 @@ export default function ReinforcedLearning() {
                   Cancel & Go Back
                 </Button>
               </div>
+            )}
 
-            ) : (
-
-              <div className={`w-full flex flex-col items-center transition-opacity duration-500 ${correctionMode === 'SHOWING_CARD' ? 'opacity-0' : 'opacity-100'}`}>
-
-                <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight mb-4 text-center">Hello! I'm Mochi</h1>
-
-                <div className="w-full flex justify-center items-start min-h-[4rem]">
-                  <FeedbackBubble feedback={feedback} mood={mood} />
-                </div>
-
-                <div className="w-full flex justify-center mt-4">
-                  <InteractionPill 
-                    isThinking={isThinking}
-                    isRecording={isRecording}
-                    startRecording={startRecording}
-                    stopRecording={stopRecording}
-                    mood={mood}
-                  />
-                </div>
+            {/*SHOWING CARD & ACTIVELY LISTENING */}
+            {correctionMode === 'SHOWING_CARD' && (
+              <div className="w-full flex justify-center items-start min-h-[4rem] mt-4 animate-in fade-in duration-500">
+                {/* Feedback bubble stays visible */}
+                <FeedbackBubble feedback={feedback} mood={mood} />
               </div>
+            )}
+
+            {/* NORMAL CHAT */}
+            {correctionMode === 'NONE' && (
+
+            <div className="w-full flex flex-col items-center animate-in fade-in duration-500">
+
+              <h1 className="text-4xl font-extrabold text-slate-800 tracking-tight mb-4 text-center">Hello! I'm Mochi</h1>
+
+              <div className="w-full flex justify-center items-start min-h-[4rem]">
+                <FeedbackBubble feedback={feedback} mood={mood} />
+              </div>
+
+              <div className="w-full flex justify-center mt-4">
+                <InteractionPill 
+                  isThinking={isThinking}
+                  isRecording={isRecording}
+                  startRecording={startRecording}
+                  stopRecording={stopRecording}
+                  mood={mood}
+                />
+              </div>
+            </div>
             )}
 
         </div>
