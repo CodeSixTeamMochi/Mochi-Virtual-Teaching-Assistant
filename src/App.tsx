@@ -9,6 +9,12 @@ import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import VisualSearch from "./pages/VisualSearch";
+import LessonPlaneHome from "./pages/LessonPlaneHome";
+import CreateLesson from "./pages/CreateLesson";
+import EditLesson from "./pages/EditLesson";
+import PlayLesson from "./pages/PlayLesson";
+import ReinforcedLearning from "./pages/ReinforcedLearning";
+import PhoneticDashboard from "./pages/PhoneticDashboard";
 
 const queryClient = new QueryClient();
 
@@ -24,6 +30,12 @@ const App = () => (
           <Route path="/home" element={<Home />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
           <Route path="/visual-search" element={<VisualSearch/>} />
+          <Route path="/LessonPlaneHome" element={<LessonPlaneHome />} />
+          <Route path="/CreateLesson" element={<CreateLesson />} />
+          <Route path="/EditLesson/:id" element={<EditLesson />} />
+          <Route path="/PlayLesson/:id" element={<PlayLesson />} />
+          <Route path="/reinforced-learning" element={<ReinforcedLearning />} />
+          <Route path="/phonetic-dashboard" element={<PhoneticDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
