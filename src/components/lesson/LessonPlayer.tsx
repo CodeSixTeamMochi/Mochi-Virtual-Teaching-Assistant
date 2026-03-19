@@ -7,7 +7,7 @@ import { getLessonById } from '@/services/storageService';
 import { speak, stop, preloadVoices } from '@/services/ttsService';
 import { Lesson } from '@/types/lesson';
 import { toast } from '@/hooks/use-toast';
-import mochiCharacter from '@/assets/mochi-avatar.jpeg';
+import mochiCharacter from '@/assets/mochi-avatar-gif.gif';
 import { markLessonAsDone } from '@/services/storageService';
 
 
@@ -136,7 +136,7 @@ const LessonPlayer = () => {
               <img 
                 src={mochiCharacter}
                 alt="Mochi Character" 
-                className="h-48 w-48 object-contain opacity-90"
+                className="h-80 w-80 object-contain opacity-90"
               />
             </div>
           </div>
