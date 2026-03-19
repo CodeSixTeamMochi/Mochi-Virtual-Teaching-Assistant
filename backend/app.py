@@ -1,13 +1,20 @@
 from flask import Flask, jsonify
 from flask_cors import CORS
 from db import get_db_connection, release_db_connection
-from routes.emergency_contacts import emergency_contacts_bp  # ← Add this
+from routes.emergency_contacts import emergency_contacts_bp
+from routes.medications import medications_bp
+from routes.students import students_bp
 
 app = Flask(__name__)
 CORS(app)
 
 # Register emergency contacts blueprint
-app.register_blueprint(emergency_contacts_bp)  # ← Add this
+app.register_blueprint(emergency_contacts_bp)  
+# Register medications blueprint
+app.register_blueprint(medications_bp)  
+# Register students blueprint
+app.register_blueprint(students_bp)  
+
 
 @app.route('/')
 def home():

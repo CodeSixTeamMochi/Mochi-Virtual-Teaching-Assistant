@@ -12,7 +12,7 @@ def get_emergency_contacts():
         cursor.execute("""
             SELECT id, name, phone, type, icon 
             FROM emergency_contacts 
-            ORDER BY id
+            ORDER BY created_at
         """)
         contacts = cursor.fetchall()
         cursor.close()
@@ -44,7 +44,7 @@ def add_emergency_contact():
         name = data.get('name')
         phone = data.get('phone')
         contact_type = data.get('type')
-        icon = data.get('icon', 'ambulance')
+        icon = data.get('icon', 'phone')  # Default icon
         
         if not name or not phone or not contact_type:
             return jsonify({"error": "Name, phone, and type required"}), 400
@@ -81,6 +81,15 @@ def update_emergency_contact(contact_id):
     conn = get_db_connection()
     try:
         data = request.get_json()
+
+        #Validation
+        name = data.get('name')
+        phone = data.get('phone')
+        contact_type = data.get('type')
+        icon = data.get('icon')
+        
+        if not name or not phone or not contact_type or not icon:
+            return jsonify({"error": "All fields are required"}), 400
         
         cursor = conn.cursor()
         cursor.execute("""
@@ -89,7 +98,7 @@ def update_emergency_contact(contact_id):
                 updated_at = CURRENT_TIMESTAMP
             WHERE id = %s
             RETURNING id, name, phone, type, icon
-        """, (data['name'], data['phone'], data['type'], data['icon'], contact_id))
+        """, (name, phone, contact_type, icon, contact_id))
         
         result = cursor.fetchone()
         conn.commit()
