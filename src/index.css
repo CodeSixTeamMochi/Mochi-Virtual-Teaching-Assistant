@@ -43,6 +43,11 @@
     --warning: 0 70% 60%;
     --warning-foreground: 0 0% 100%;
 
+    /* Notification Bell - Yellow */
+    --notification: 40 95% 55%;
+    --notification-foreground: 30 50% 15%;
+
+
     /* Info - Light Blue Card Background */
     --info: 195 60% 92%;
     --info-foreground: 195 70% 35%;
@@ -60,6 +65,14 @@
     --ring: 195 70% 50%;
 
     --radius: 1rem;
+
+    /* Emergency*/
+    --emergency: 350 85% 60%;
+    --emergency-foreground: 0 0% 100%;
+    --health: 350 70% 55%;
+    --health-foreground: 0 0% 100%;
+    --call: 200 80% 55%;
+    --call-foreground: 0 0% 100%;
 
     /* Login specific colors */
     --login-bg: 200 20% 96%;
@@ -146,7 +159,9 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -206,6 +221,12 @@
     color: hsl(var(--warning-foreground));
   }
 
+  .notification-bell-yellow {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+    background: hsl(var(--notification));
+    color: hsl(var(--notification-foreground));
+  }
+  
   /* ===== Mochi Visual Search Components ===== */
   .mochi-card {
     @apply bg-card rounded-2xl shadow-[0_8px_30px_-8px_hsl(220_20%_50%_/_0.15)] border-0;
@@ -264,6 +285,10 @@
 }
 
 @layer utilities {
+  .font-inter {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  
   .font-nunito {
     font-family: 'Nunito', sans-serif;
 

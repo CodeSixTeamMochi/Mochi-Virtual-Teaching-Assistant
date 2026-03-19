@@ -55,7 +55,11 @@ const Home = () => {
     <div className="min-h-screen bg-background relative">
       {/* Notification Bell - Top Right */}
       <div className="absolute top-6 right-6">
-        <button className="notification-bell">
+        <button 
+        className="notification-bell"
+        onClick={() => navigate('/health-data')}
+        aria-label="Emergency Data"
+        >
           <Bell size={24} />
         </button>
       </div>
