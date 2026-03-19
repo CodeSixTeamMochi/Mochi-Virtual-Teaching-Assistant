@@ -35,13 +35,13 @@ const Home = () => {
   const handleFeatureClick = (featureId: string) => {
     switch (featureId) {
       case "visual-search":
-        navigate("/");
+        navigate("/visual-search");
         break;
       case "revision-games":
-        navigate("/");
+        navigate("/LessonPlaneHome");
         break;
       case "pronunciation":
-        navigate("/");
+        navigate("/reinforced-learning");
         break;
       case "dashboard":
         navigate("/");
