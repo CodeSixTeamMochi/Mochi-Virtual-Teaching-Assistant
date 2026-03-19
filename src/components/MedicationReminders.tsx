@@ -284,19 +284,23 @@ const MedicationReminders = ({
                           {status === "seen" && (
                             <button
                               onClick={() => handleMarkAsCompleted(med.id)}
-                              className="flex items-center gap-2 rounded-full bg-success/10 px-6 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20"
+                              className="flex items-center gap-2 rounded-full border-2 border-success bg-success/10 px-6 py-2 text-sm font-medium text-success transition-colors hover:bg-success/20"
                               title="Mark as Completed"
                             >
                               <CheckCircle className="h-4 w-4" />
                               Done
                             </button>
                           )}
-                          <button
+
+                          {status === "pending" && (
+                            <button
                             onClick={() => handleEdit(med)}
                             className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 transition-colors hover:bg-primary/20"
-                          >
-                            <Pencil className="h-3.5 w-3.5 text-primary" />
-                          </button>
+                            >
+                              <Pencil className="h-3.5 w-3.5 text-primary" />
+                            </button>
+                          )}
+                          
                           <button
                             onClick={() => onDeleteMedication(med.id)}
                             className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
