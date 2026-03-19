@@ -301,12 +301,14 @@ const MedicationReminders = ({
                             </button>
                           )}
                           
-                          <button
+
+                          {/* If admin use, comment out to use the feature */}
+                          {/* <button
                             onClick={() => onDeleteMedication(med.id)}
                             className="flex h-8 w-8 items-center justify-center rounded-full bg-destructive/10 transition-colors hover:bg-destructive/20"
                           >
                             <Trash2 className="h-3.5 w-3.5 text-destructive" />
-                          </button>
+                          </button> */}
                         </div>
                       </div>
                     </div>

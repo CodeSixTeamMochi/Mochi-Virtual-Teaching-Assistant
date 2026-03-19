@@ -2,22 +2,33 @@ import { useState } from "react";
 import { Heart, Search, Plus } from "lucide-react";
 import { Student } from "@/Data/mockData.ts";
 import StudentCard from "./StudentCard";
-import AddStudentModal from "./AddStudentModal";
+import StudentHealthModal from "./StudentHealthModal";
 
 interface Props {
   students: Student[];
-  onUpdateStudent: (updated: Student) => void;
   onAddStudent: (newStudent: Student) => void;
-  onDeleteStudent: (studentId: string) => void;
 }
 
 const classOptions = ["Class A", "Class B"];
 
-const StudentHealthRecords = ({ students, onUpdateStudent, onAddStudent, onDeleteStudent }: Props) => {
+const StudentHealthRecords = ({ students, onAddStudent }: Props) => {
   const [search, setSearch] = useState("");
   const [selectedClass, setSelectedClass] = useState("Class A");
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
+  const mockDatabaseStudents = [
+    { id: "db-1", name: "Amaya Silva", parentPhone: "+94 77 111 2222", classGroup: "Class A" },
+    { id: "db-2", name: "Dineth Fernando", parentPhone: "+94 77 222 3333", classGroup: "Class A" },
+    { id: "db-3", name: "Lithmi Perera", parentPhone: "+94 77 333 4444", classGroup: "Class B" },
+    { id: "db-4", name: "Ravindu Jayasinghe", parentPhone: "+94 77 444 5555", classGroup: "Class B" },
+    { id: "db-5", name: "Tharusha Wickramasinghe", parentPhone: "+94 77 555 6666", classGroup: "Class A" },
+    { id: "db-6", name: "Savindi Rajapaksa", parentPhone: "+94 77 666 7777", classGroup: "Class B" },
+  ];
+
+  const availableStudents = mockDatabaseStudents.filter(
+    (dbStudent) => !students.find((s) => s.id === dbStudent.id)
+  );
+  
   const filtered = students.filter(
     (s) =>
       s.classGroup === selectedClass &&
@@ -60,7 +71,7 @@ const StudentHealthRecords = ({ students, onUpdateStudent, onAddStudent, onDelet
             ))}
           </select>
           <button
-              onClick={() => setIsAddModalOpen(true)}
+              onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
             >
               <Plus className="h-4 w-4" />
@@ -78,21 +89,19 @@ const StudentHealthRecords = ({ students, onUpdateStudent, onAddStudent, onDelet
         ) : (
           filtered.map((student) => (
             <StudentCard 
-            key={student.id} 
-            student={student} 
-            onUpdate={onUpdateStudent} 
-            onDelete={onDeleteStudent}
+              key={student.id} 
+              student={student} 
             />
           ))
         )}
       </div>
     </section>
 
-    <AddStudentModal
-        isOpen={isAddModalOpen}
-        onClose={() => setIsAddModalOpen(false)}
-        onAdd={onAddStudent}
-        selectedClass={selectedClass}
+    <StudentHealthModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSave={onAddStudent} 
+        availableStudents={availableStudents}
       />
     </>
   );

@@ -100,17 +100,17 @@ const HealthData = () => {
   }, [medications]);
 
   // Student handlers (localStorage)
-  const handleUpdateStudent = (updated: Student) => {
-    setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
-  };
+  // const handleUpdateStudent = (updated: Student) => {
+  //   setStudents((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+  // };
 
   const handleAddStudent = (newStudent: Student) => {
     setStudents((prev) => [...prev, newStudent]);
   };
 
-  const handleDeleteStudent = (studentId: string) => {
-    setStudents((prev) => prev.filter((s) => s.id !== studentId));
-  };
+  // const handleDeleteStudent = (studentId: string) => {
+  //   setStudents((prev) => prev.filter((s) => s.id !== studentId));
+  // };
 
   // Medication handlers (localStorage)
   const handleAddMedication = (newMedication: MedicationReminder) => {
@@ -248,9 +248,7 @@ const HealthData = () => {
         />
         <StudentHealthRecords 
           students={students} 
-          onUpdateStudent={handleUpdateStudent} 
           onAddStudent={handleAddStudent}
-          onDeleteStudent={handleDeleteStudent}
         />
       </main>
     </div>
