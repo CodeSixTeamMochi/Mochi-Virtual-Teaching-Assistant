@@ -32,3 +32,4 @@ dist-ssr
         {{"name": "item name", "spokenText": "Simple, engaging text about this item (1-2 sentences)"}}
     ]
 }}
+Backend/.env

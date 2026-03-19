@@ -41,7 +41,7 @@ const Home = () => {
         navigate("/LessonPlaneHome");
         break;
       case "pronunciation":
-        navigate("/");
+        navigate("/reinforced-learning");
         break;
       case "dashboard":
         navigate("/");
