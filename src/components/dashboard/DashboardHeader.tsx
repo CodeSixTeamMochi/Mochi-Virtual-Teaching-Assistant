@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import mochiAvatar from "@/assets/mochi-mascot.jpeg";
 import { useState } from "react";
 import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface DashboardHeaderProps {
   teacherName?: string;
@@ -13,6 +14,9 @@ export const DashboardHeader = ({
   teacherName = "Teacher", 
   onLogout 
 }: DashboardHeaderProps) => {
+
+
+  const navigate = useNavigate();
   /**
  * MochiGreeting Component
  * Displays the Mochi mascot with a friendly greeting
@@ -48,8 +52,8 @@ export const DashboardHeader = ({
     <header className="sticky top-0 z-20 flex items-center justify-between px-6 py-4 bg-card/80 backdrop-blur-lg border border-border/40 rounded-3xl shadow-soft animate-slide-up">
       <div className="flex items-center gap-4">
         {/* Added a subtle glow behind avatar */}
-        <div className="relative">
-          <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full" />
+        <div className="relative" onClick={() => navigate("/home")}>
+          <div className="absolute inset-0 bg-primary/20 blur-lg rounded-full"  />
           <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-background shadow-md">
             <img src={mochiAvatar} alt="Mochi" className="w-full h-full object-cover" />
           </div>

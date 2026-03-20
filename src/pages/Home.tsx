@@ -46,7 +46,7 @@ const Home = () => {
         break;
       case "dashboard":
 
-        navigate("/TeacherDashboard");
+        navigate("/dashboard");
         break;  
       default:
         navigate("/Home");
