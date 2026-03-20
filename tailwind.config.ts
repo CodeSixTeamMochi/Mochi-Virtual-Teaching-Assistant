@@ -50,7 +50,6 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
@@ -66,7 +65,6 @@ export default {
         mochi: "hsl(var(--card-mochi))",
         "stats-green": "hsl(var(--card-stats-green))",
         "stats-yellow": "hsl(var(--card-stats-yellow))",
-
         login: {
           bg: "hsl(var(--login-bg))",
           card: "hsl(var(--login-card))",
@@ -101,8 +99,14 @@ export default {
           to: { height: "0" },
         },
         "float": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-10px)" },
+          "0%, 100%": { 
+            transform: "translateY(0) scale(1)",
+            filter: "drop-shadow(0 5px 15px rgba(0,0,0,0.1))" 
+          },
+          "50%": { 
+            transform: "translateY(-15px) scale(1.02)",
+            filter: "drop-shadow(0 20px 25px rgba(0,0,0,0.05))"
+          },
         },
         "pulse-soft": {
           "0%, 100%": { opacity: "1" },
