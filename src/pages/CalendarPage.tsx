@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Pencil, Trash2 } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Plus, X, Pencil, Trash2, Loader2, Calendar as CalendarIcon, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 interface CalendarEvent {
   id: string;
   title: string;
-  date: string;
+  date: string; // Format: YYYY-MM-DD
   time: string;
   type: "lesson" | "activity" | "meeting" | "holiday";
 }
@@ -17,23 +17,37 @@ const CalendarPage = () => {
   const navigate = useNavigate();
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Modal & Form States
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editingEventId, setEditingEventId] = useState<string | null>(null);
   const [eventTitle, setEventTitle] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [events, setEvents] = useState<CalendarEvent[]>(() => {
-    const saved = localStorage.getItem('mochi_events');
-    return saved ? JSON.parse(saved) : [
-      { id: "1", title: "Hesandu's Birthday", date: "2026-02-16", time: "All Day", type: "holiday" },
-      { id: "2", title: "Cultural Day", date: "2026-02-18", time: "9:00 AM", type: "activity" },
-    ];
-  });
+  // New: Delete Confirmation States
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [eventToDelete, setEventToDelete] = useState<string | null>(null);
+
+  const fetchEvents = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/events');
+      if (res.ok) {
+        const data = await res.json();
+        setEvents(data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch events:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    localStorage.setItem('mochi_events', JSON.stringify(events));
-  }, [events]);
+    fetchEvents();
+  }, []);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -57,94 +71,88 @@ const CalendarPage = () => {
     return events.some(e => e.date === dateStr);
   };
 
-  const handleOpenAdd = () => {
-    setEventTitle("");
-    setIsEditing(false);
-    setEditingEventId(null);
-    setIsModalOpen(true);
-  };
-
-  const handleOpenEdit = (event: CalendarEvent) => {
-    setEventTitle(event.title);
-    setIsEditing(true);
-    setEditingEventId(event.id);
-    setIsModalOpen(true);
-  };
-
-  const handleSaveEvent = () => {
+  const handleSaveEvent = async () => {
     if (!eventTitle.trim()) return;
+    setIsSaving(true);
+    const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
+    const eventPayload = { title: eventTitle, date: dateStr, time: "All Day", type: "activity" };
 
-    if (isEditing && editingEventId) {
-      setEvents(prev => prev.map(e =>
-        e.id === editingEventId ? { ...e, title: eventTitle } : e
-      ));
-    } else {
-      const dateStr = `${selectedDate.getFullYear()}-${String(selectedDate.getMonth() + 1).padStart(2, '0')}-${String(selectedDate.getDate()).padStart(2, '0')}`;
-      const newEvent: CalendarEvent = {
-        id: String(Date.now()),
-        title: eventTitle,
-        date: dateStr,
-        time: "All Day",
-        type: eventTitle.toLowerCase().includes("birthday") ? "holiday" : "lesson",
-      };
-      setEvents(prev => [...prev, newEvent]);
+    try {
+      const url = isEditing ? `http://localhost:5000/api/events/${editingEventId}` : 'http://localhost:5000/api/events';
+      const res = await fetch(url, {
+        method: isEditing ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(eventPayload)
+      });
+      if (res.ok) {
+        await fetchEvents();
+        setIsModalOpen(false);
+        setEventTitle("");
+        setIsEditing(false);
+      }
+    } finally {
+      setIsSaving(false);
     }
-    setEventTitle("");
-    setIsModalOpen(false);
-    setIsEditing(false);
-    setEditingEventId(null);
   };
 
-  const handleDeleteEvent = (eventId: string) => {
-    setEvents(prev => prev.filter(e => e.id !== eventId));
+  // Open the custom delete confirmation
+  const triggerDelete = (id: string) => {
+    setEventToDelete(id);
+    setIsDeleteModalOpen(true);
   };
 
-  const prevMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1));
-  };
-
-  const nextMonth = () => {
-    setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1));
+  const confirmDelete = async () => {
+    if (!eventToDelete) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`http://localhost:5000/api/events/${eventToDelete}`, { method: 'DELETE' });
+      if (res.ok) {
+        await fetchEvents();
+        setIsDeleteModalOpen(false);
+        setEventToDelete(null);
+      }
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const days = getDaysInMonth(currentDate);
   const weekDays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
   return (
-    <div className="min-h-screen bg-background font-nunito p-6 md:p-10 relative">
-      <header className="flex items-center gap-4 mb-10">
-        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
-          <ArrowLeft className="w-6 h-6" />
+    <div className="min-h-screen bg-[#F0F4F8] font-nunito p-4 md:p-8 relative">
+      <header className="flex items-center gap-4 mb-6">
+        <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')} className="hover:bg-white/50 rounded-xl">
+          <ArrowLeft className="w-6 h-6 text-[#1e293b]" />
         </Button>
         <div>
-          <h1 className="text-3xl font-extrabold text-foreground">Calendar & Events</h1>
-          <p className="text-muted-foreground font-medium">Create and manage your lessons using Mochi AI</p>
+          <h1 className="text-2xl font-black text-[#1e293b]">Calendar & Events</h1>
+          <p className="text-sm font-bold text-[#0891b2]">Manage your schedule with Mochi AI</p>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <Card className="lg:col-span-7 p-8 rounded-[2.5rem] shadow-sm border-none bg-card">
-          <div className="flex items-center justify-between mb-8 px-2">
-            <h2 className="text-xl font-bold text-muted-foreground">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* SMALL CALENDAR */}
+        <Card className="lg:col-span-6 p-6 rounded-[2rem] shadow-sm border-none bg-white">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-black text-[#1e293b]">
               {currentDate.toLocaleDateString("en-US", { month: 'long', year: 'numeric' })}
             </h2>
-            <div className="flex gap-2">
-              <Button variant="ghost" size="icon" onClick={prevMonth}>
-                <ChevronLeft className="w-5 h-5" />
+            <div className="flex gap-1">
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1))}>
+                <ChevronLeft className="w-4 h-4" />
               </Button>
-              <Button variant="ghost" size="icon" onClick={nextMonth}>
-                <ChevronRight className="w-5 h-5" />
+              <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setCurrentDate(new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1))}>
+                <ChevronRight className="w-4 h-4" />
               </Button>
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-2 mb-4">
-            {weekDays.map((day) => (
-              <div key={day} className="text-center text-sm font-bold text-muted-foreground py-2">{day}</div>
-            ))}
+          <div className="grid grid-cols-7 gap-1 mb-2">
+            {weekDays.map(day => <div key={day} className="text-center text-[11px] font-black text-slate-400 py-1">{day}</div>)}
           </div>
 
-          <div className="grid grid-cols-7 gap-3">
+          <div className="grid grid-cols-7 gap-2">
             {days.map((date, index) => {
               const hasEvent = date && dateHasEvent(date);
               const isSelected = date && isSameDay(date, selectedDate);
@@ -153,11 +161,11 @@ const CalendarPage = () => {
                   key={index}
                   onClick={() => date && setSelectedDate(date)}
                   className={cn(
-                    "aspect-square rounded-2xl text-lg font-bold flex items-center justify-center transition-all duration-200",
+                    "aspect-square rounded-xl text-sm font-black flex items-center justify-center transition-all",
                     !date && "invisible",
-                    date && !hasEvent && "text-foreground bg-secondary hover:bg-muted",
-                    hasEvent && "bg-destructive/15 text-destructive",
-                    isSelected && "ring-4 ring-primary/20 scale-105"
+                    date && !hasEvent && "text-[#1e293b] bg-slate-50 hover:bg-[#cffafe]",
+                    hasEvent && "bg-[#ecfeff] text-[#0891b2] border border-[#a5f3fc]",
+                    isSelected && "bg-[#0891b2] text-white ring-2 ring-[#0891b2]/20"
                   )}
                 >
                   {date?.getDate()}
@@ -167,69 +175,95 @@ const CalendarPage = () => {
           </div>
         </Card>
 
-        <div className="lg:col-span-5 space-y-6">
-          <h3 className="text-xl font-bold text-muted-foreground px-2">Upcoming Events</h3>
-          <div className="space-y-4">
-            {events.map((event) => (
-              <div key={event.id} className="bg-card p-5 rounded-3xl shadow-sm border border-border/50 flex items-center justify-between group">
-                <div>
-                  <h4 className="text-lg font-bold text-foreground">{event.title}</h4>
-                  <p className="text-muted-foreground font-medium">
-                    {new Date(event.date + 'T00:00:00').toLocaleDateString("en-US", { month: 'short', day: 'numeric' })}
-                  </p>
+        {/* SCROLLABLE EVENTS LIST */}
+        <div className="lg:col-span-5 flex flex-col max-h-[500px]">
+          <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-4 px-2">Upcoming</h3>
+          <div className="flex-1 overflow-y-auto pr-2 space-y-3 custom-scrollbar">
+            {isLoading ? (
+              <Loader2 className="animate-spin mx-auto text-[#0891b2]" />
+            ) : events.map((event) => (
+              <div key={event.id} className="bg-white p-4 rounded-2xl shadow-sm flex items-center justify-between group">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#ecfeff] flex flex-col items-center justify-center">
+                    <span className="text-[10px] font-black text-[#0891b2] uppercase">{new Date(event.date + 'T00:00:00').toLocaleDateString("en-US", { month: 'short' })}</span>
+                    <span className="text-sm font-black text-[#0891b2]">{new Date(event.date + 'T00:00:00').getDate()}</span>
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-[#1e293b]">{event.title}</h4>
+                    <p className="text-[11px] font-bold text-slate-400">All Day</p>
+                  </div>
                 </div>
                 <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => handleOpenEdit(event)}>
-                    <Pencil className="w-4 h-4 text-primary" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="rounded-full h-8 w-8" onClick={() => handleDeleteEvent(event.id)}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
+                  <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => {
+                    setEventTitle(event.title);
+                    setEditingEventId(event.id);
+                    setIsEditing(true);
+                    setIsModalOpen(true);
+                  }}><Pencil className="w-3.5 h-3.5" /></Button>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500" onClick={() => triggerDelete(event.id)}>
+                    <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               </div>
             ))}
-            <div className="h-20 border-2 border-dashed border-border rounded-3xl" />
           </div>
         </div>
       </div>
 
-      {/* Floating Add Button */}
-      <Button
-        onClick={handleOpenAdd}
-        className="fixed bottom-10 right-10 w-16 h-16 rounded-2xl bg-primary hover:bg-primary/80 shadow-lg flex items-center justify-center transition-all hover:scale-110"
-      >
-        <Plus className="w-8 h-8 text-primary-foreground" strokeWidth={3} />
-      </Button>
-
-      {/* Add/Edit Event Modal */}
-      {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/20 backdrop-blur-sm p-4 animate-fade-in">
-          <Card className="w-full max-w-md p-6 rounded-[2rem] shadow-2xl animate-scale-in">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-bold">{isEditing ? "Edit Event" : "Add Event"}</h2>
-              <Button variant="ghost" size="icon" onClick={() => { setIsModalOpen(false); setIsEditing(false); setEditingEventId(null); }}>
-                <X />
+      {/* CUSTOM DELETE CONFIRMATION MODAL */}
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-[#1e293b]/40 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <Card className="w-full max-w-sm p-8 rounded-[2.5rem] shadow-2xl border-none text-center animate-in zoom-in-95">
+            <div className="w-16 h-16 bg-red-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-8 h-8 text-red-500" />
+            </div>
+            <h2 className="text-xl font-black text-[#1e293b] mb-2">Delete Event?</h2>
+            <p className="text-sm font-bold text-slate-400 mb-8 px-4">
+              Are you sure? This action cannot be undone.
+            </p>
+            <div className="flex gap-3">
+              <Button variant="ghost" className="flex-1 rounded-xl py-6 font-black" onClick={() => setIsDeleteModalOpen(false)}>Cancel</Button>
+              <Button className="flex-1 rounded-xl py-6 font-black bg-red-500 hover:bg-red-600 text-white" onClick={confirmDelete} disabled={isSaving}>
+                {isSaving ? <Loader2 className="animate-spin" /> : "Delete"}
               </Button>
+            </div>
+          </Card>
+        </div>
+      )}
+
+      {/* ADD/EDIT MODAL */}
+      {isModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#1e293b]/40 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-sm p-6 rounded-[2rem] shadow-2xl animate-in zoom-in-95 border-none">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-black text-[#1e293b]">{isEditing ? "Edit" : "New"} Event</h2>
+              <Button variant="ghost" size="icon" onClick={() => setIsModalOpen(false)}><X /></Button>
             </div>
             <input
               autoFocus
-              className="w-full p-4 bg-secondary/30 rounded-2xl mb-4 outline-none focus:ring-2 ring-primary text-foreground"
-              placeholder="Event Title (e.g. Sara's Birthday)"
+              className="w-full p-4 bg-slate-50 rounded-xl mb-6 outline-none text-sm font-bold"
+              placeholder="Event Title"
               value={eventTitle}
               onChange={(e) => setEventTitle(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleSaveEvent()}
             />
-            {!isEditing && (
-              <p className="text-sm text-muted-foreground mb-4 px-1">
-                Date: {selectedDate.toLocaleDateString("en-US", { month: 'long', day: 'numeric', year: 'numeric' })}
-              </p>
-            )}
-            <Button className="w-full rounded-2xl py-6 bg-primary font-bold" onClick={handleSaveEvent}>
-              {isEditing ? "Save Changes" : "Save Event"}
+            <Button className="w-full rounded-xl py-6 text-sm font-black bg-[#0891b2] text-white" onClick={handleSaveEvent} disabled={isSaving}>
+              {isSaving ? <Loader2 className="animate-spin" /> : "Save Event"}
             </Button>
           </Card>
         </div>
       )}
+
+      <Button
+        onClick={() => { setIsEditing(false); setEventTitle(""); setIsModalOpen(true); }}
+        className="fixed bottom-8 right-8 w-14 h-14 rounded-2xl bg-[#0891b2] text-white shadow-lg transition-all z-20"
+      >
+        <Plus className="w-6 h-6" strokeWidth={4} />
+      </Button>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+      `}</style>
     </div>
   );
 };
