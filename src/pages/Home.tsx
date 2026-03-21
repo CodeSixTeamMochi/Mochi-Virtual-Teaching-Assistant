@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Bell, Image } from 'lucide-react';
 import mochiAvatar from '@/assets/mochi-avatar.jpeg';
 
+
 // TODO: Database Integration
 // When connecting to PostgreSQL database:
 // 1. Verify user session/token is valid
@@ -44,9 +45,12 @@ const Home = () => {
         navigate("/reinforced-learning");
         break;
       case "dashboard":
-        navigate("/");
+
+        navigate("/dashboard");
         break;  
       default:
+        navigate("/Home");
+
         console.warn(`No route defined for: ${featureId}`);
     }
   };

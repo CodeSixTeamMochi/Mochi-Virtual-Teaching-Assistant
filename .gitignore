@@ -25,6 +25,9 @@ __pycache__/
 *.njsproj
 *.sln
 *.sw?
+package-lock.jsonpackage-lock.json
+
+.env
 backend/.env
 backend/venv/
 backend/__pycache__/

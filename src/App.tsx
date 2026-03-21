@@ -17,6 +17,17 @@ import PlayLesson from "./pages/PlayLesson";
 import ReinforcedLearning from "./pages/ReinforcedLearning";
 import PhoneticDashboard from "./pages/PhoneticDashboard";
 
+import TeacherDashboard from "./pages/TeacherDashboard";
+import LessonsPage from "./pages/LessonsPage";
+import ActivitiesPage from "./pages/ActivitiesPage";
+import SpeechReportsPage from "./pages/SpeechReportsPage";
+import HealthDataPage from "./pages/HealthDataPage";
+import RemindersPage from "./pages/RemindersPage";
+import CalendarPage from "./pages/CalendarPage";
+import StudentsPage from "./pages/StudentsPage";
+import TimetablePage from "./pages/TimetablePage";
+
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -29,7 +40,20 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
           <Route path="/home" element={<Home />} />
+
           <Route path="/forgot-password" element={<ForgotPassword />} />
+
+          <Route path="/dashboard" element={<TeacherDashboard />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/lessons" element={<LessonsPage />} />
+          <Route path="/activities" element={<ActivitiesPage />} />
+          <Route path="/speech-reports" element={<SpeechReportsPage />} />
+          <Route path="/health" element={<HealthDataPage />} />
+          <Route path="/reminders" element={<RemindersPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/students" element={<StudentsPage />} />
+          <Route path="/timetable" element={<TimetablePage />} />
+
           <Route path="/health-data" element={<HealthData />} />
           <Route path="/visual-search" element={<VisualSearch/>} />
           <Route path="/LessonPlaneHome" element={<LessonPlaneHome />} />

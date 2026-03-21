@@ -1,3 +1,19 @@
+from flask import Flask
+from flask_cors import CORS
+from routes.routes import dashboard_bp
+
+app = Flask(__name__)
+
+# Allow specifically your React port
+CORS(app, resources={r"/api/*": {"origins": "http://localhost:8080"}},
+     supports_credentials=True,
+     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+     allow_headers=["Content-Type", "Authorization"])   
+
+app.register_blueprint(dashboard_bp)
+
+if __name__ == '__main__':
+    app.run(debug=True, port=5000)
 from flask import Flask, jsonify
 from flask_cors import CORS
 from db import get_db_connection, release_db_connection
