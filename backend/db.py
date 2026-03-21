@@ -1,21 +1,25 @@
 import os
 import psycopg2
+from psycopg2 import pool
 from dotenv import load_dotenv
 
-# Load variables from .env
+# Load the hidden variables from the .env file
 load_dotenv()
 
-def get_db_connection():
-    try:
-        # Securely fetch the URI from the environment
-        NEON_URI = os.environ.get("DATABASE_URL")
-        
-        if not NEON_URI:
-            print("Error: No DATABASE_URL found in .env file.")
-            return None
+# Initialize connection pool
+try:
+    db_pool = psycopg2.pool.SimpleConnectionPool(
+        1, 10,
+        dsn=os.getenv("DATABASE_URL")
+    )
+    print("Successfully connected to Neon Cloud Database")
+except Exception as e:
+    print(f"Database connection failed: {e}")
 
-        conn = psycopg2.connect(NEON_URI)
-        return conn
-    except Exception as e:
-        print(f"Error connecting to Neon database: {e}")
-        return None
+def get_db_connection():
+    """Fetches a connection from the pool"""
+    return db_pool.getconn()
+
+def release_db_connection(conn):
+    """Returns the connection to the pool after use"""
+    db_pool.putconn(conn)

@@ -223,16 +223,16 @@ const handleSaveEdit = async (id: number) => {
             </div>
           </div>
           <div className="w-[155px] shrink-0 flex items-end justify-center relative z-10">
-            <div className="text-[96px] leading-none animate-[float_3.2s_ease-in-out_infinite] drop-shadow-[0_8px_16px_rgba(14,116,144,0.2)]">
-              <div className="w-[180px] shrink-0 flex items-end justify-center relative z-10 pb-2"> {/* Added pb-2 for animation clearance */}
-                <img 
-                  src="src\assets\mochi-avatar-gif.gif" 
-                  alt="Mochi Mascot" 
-                  className="w-full h-auto animate-[float_3.2s_ease-in-out_infinite] drop-shadow-[0_8px_16px_rgba(14,116,144,0.2)]" 
-                />  
-            </div>
+          <div className="text-[96px] leading-none drop-shadow-[0_8px_16px_rgba(14,116,144,0.2)]">
+            <div className="w-[180px] shrink-0 flex items-end justify-center relative z-10 pb-2">
+              <img 
+                src="src\assets\mochi_waving.gif"
+                alt="Mochi Mascot" 
+                className="w-full h-auto drop-shadow-[0_8px_16px_rgba(14,116,144,0.2)]" 
+              />  
             </div>
           </div>
+        </div>
         </div>
 
         {/* STATS BAR */}

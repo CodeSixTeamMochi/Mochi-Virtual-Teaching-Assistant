@@ -3,6 +3,7 @@ from db import get_db_connection
 import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
+from db import release_db_connection
 
 dashboard_bp = Blueprint('dashboard', __name__)
 
@@ -35,7 +36,8 @@ def get_stats():
         print(f"Stats Error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn) 
 
 # ==========================================
 # 2. TODAY'S SCHEDULE
@@ -71,7 +73,8 @@ def get_today_schedule():
         print(f"Schedule Error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn) 
 
 # ==========================================
 # 3. ANNOUNCEMENTS
@@ -102,7 +105,8 @@ def handle_announcements():
             conn.commit()
             return jsonify({"id": new_id, "title": data['title'], "time": time_str})
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn) 
 
 @dashboard_bp.route('/api/dashboard/announcements/<int:id>', methods=['PUT', 'DELETE'])
 def update_delete_announcement(id):
@@ -131,7 +135,8 @@ def update_delete_announcement(id):
         print(f"Error: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn) 
 # ==========================================
 # 4. STUDENT MANAGEMENT
 # ==========================================
@@ -145,7 +150,8 @@ def get_students():
         students = cursor.fetchall()
         return jsonify(students)
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn) 
 
 # ==========================================
 # 5. CALENDAR EVENTS
@@ -252,7 +258,8 @@ def update_delete_timetable(id):
     except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn) 
 
 # ==========================================
 # WEEKLY NOTES ROUTES
@@ -325,4 +332,5 @@ def update_delete_note(id):
         print(f"Error handling note {id}: {e}")
         return jsonify({"error": str(e)}), 500
     finally:
-        conn.close()
+        if conn:
+            release_db_connection(conn) 

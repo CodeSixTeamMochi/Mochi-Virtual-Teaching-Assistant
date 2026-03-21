@@ -1,6 +1,6 @@
 from flask import Flask
 from flask_cors import CORS
-from backend.routes.routes import dashboard_bp
+from routes.routes import dashboard_bp
 
 app = Flask(__name__)
 
