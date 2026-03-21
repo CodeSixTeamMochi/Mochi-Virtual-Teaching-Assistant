@@ -1,97 +1,85 @@
-from flask import Flask
-from flask_cors import CORS
-from routes.routes import dashboard_bp
+"""
+Main Flask Application for Mochi
+Unified entry point for all team blueprints.
+"""
 
-app = Flask(__name__)
-
-# Allow specifically your React port
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:8080"}},
-     supports_credentials=True,
-     methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-     allow_headers=["Content-Type", "Authorization"])   
-
-app.register_blueprint(dashboard_bp)
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+import os
 from flask import Flask, jsonify
 from flask_cors import CORS
+from dotenv import load_dotenv
+
+# Database
 from db import get_db_connection, release_db_connection
+
+# Import Team Blueprints 
+
+# Reinforced Learning Feature
+from reinforcedLearningBackend import rl_bp
+
+# Dashboard & Core Student Management
+from routes.routes import dashboard_bp
 from routes.emergency_contacts import emergency_contacts_bp
 from routes.medications import medications_bp
 from routes.students import students_bp
+from routes.classrooms import classrooms_bp  # <-- Added this import to fix a missing variable in the original file
 
-app = Flask(__name__)
-CORS(app)
-
-# Register emergency contacts blueprint
-app.register_blueprint(emergency_contacts_bp)  
-# Register medications blueprint
-app.register_blueprint(medications_bp)  
-# Register students blueprint
-app.register_blueprint(students_bp)  
-# Register classrooms blueprint
-app.register_blueprint(classrooms_bp)  
-
-
-
-@app.route('/')
-def home():
-    return jsonify({"message": "Mochi Backend is Running!"})
-
-@app.route('/api/test-db')
-def test_db():
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT count(*) FROM students;")
-        count = cursor.fetchone()[0]
-        cursor.close()
-        
-        return jsonify({
-            "status": "success", 
-            "message": f"Connected! Found {count} students in the cloud database."
-        })
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-    finally:
-        release_db_connection(conn)
-
-if __name__ == '__main__':
-    app.run(debug=True, port=5000)
-from flask import Flask
-from flask_cors import CORS
+# Visual Search Feature
 from visualSearchBackend.services.config import get_config
 from visualSearchBackend.services.gemini_service import init_gemini
-from visualSearchBackend.routes import api_bp
-from flask import Flask, jsonify
-from db import get_db_connection, release_db_connection
+from visualSearchBackend.routes import api_bp as visual_search_bp
+
+# Lesson Plans Feature
+from lessonPlanBackend import lessons_bp
+
+# Load environment variables
+load_dotenv()
 
 def create_app():
+    
     app = Flask(__name__)
-    
-    # 1. Configuration
-    config_obj = get_config()
-    app.config.from_object(config_obj)
-    
-    # 2. Enable CORS (Vital for React/Vite communication)
-    CORS(app, resources={r"/api/*": {"origins": "*"}})
-    
-    # 3. Register the Blueprint
-    app.register_blueprint(api_bp, url_prefix='/api')
-    
-    # 4. Initialize AI
+
+    try:
+        # Visual Search Config
+        config_obj = get_config()
+        app.config.from_object(config_obj)
+    except Exception as e:
+        print(f"Warning: Could not load Visual Search config: {e}")
+
+    # Permissive CORS to handle React/Vite from any localhost port
+    CORS(app, resources={r"/*": {"origins": "*"}},
+         supports_credentials=True,
+         methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+         allow_headers=["Content-Type", "Authorization"])
+
+    # Initialize AI (Visual Search)
     with app.app_context():
-        # This ensures init_gemini can use current_app.config['GEMINI_API_KEY']
         try:
             init_gemini()
         except Exception as e:
-            print(f"Error initializing Gemini: {e}")
+            print(f"Error initializing Visual Search Gemini: {e}")
 
-    # 5. Database & Health Check Routes (Added without changing existing lines)
+    # Register All Blueprints 
+    
+    # Register Reinforced Learning Feature
+    app.register_blueprint(rl_bp, url_prefix='/api')
+    
+    # Register Visual Search
+    app.register_blueprint(visual_search_bp, url_prefix='/api')
+    
+    # Register Core Routes
+    app.register_blueprint(dashboard_bp)
+    app.register_blueprint(emergency_contacts_bp)
+    app.register_blueprint(medications_bp)
+    app.register_blueprint(students_bp)
+    app.register_blueprint(classrooms_bp)
+    
+    # Register Lesson Plans
+    app.register_blueprint(lessons_bp)
+
+    # Base Health Check Routes 
     @app.route('/')
     def home():
-        return jsonify({"message": "Mochi Backend is Running!"})
+        return jsonify({"message": "Mochi Backend is Running with ALL team features!"})
 
     @app.route('/api/test-db')
     def test_db():
@@ -101,6 +89,7 @@ def create_app():
             cursor.execute("SELECT count(*) FROM students;")
             count = cursor.fetchone()[0]
             cursor.close()
+            
             return jsonify({
                 "status": "success", 
                 "message": f"Connected! Found {count} students in the cloud database."
@@ -108,31 +97,8 @@ def create_app():
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)}), 500
         finally:
-            release_db_connection(conn)
-            
-    return app
-if __name__ == "__main__":
-    app = create_app()
-    app.run(host='0.0.0.0', port=5000, debug=True)
-"""
-Main Flask Application
-Each team member registers their Blueprint here.
-"""
-
-from flask import Flask
-from flask_cors import CORS
-from dotenv import load_dotenv
-
-load_dotenv()
-
-def create_app():
-    app = Flask(__name__)
-    CORS(app)
-
-    # === Register each team member's blueprint ===
-    from lessonPlanBackend import lessons_bp
- 
-    app.register_blueprint(lessons_bp)
+            if conn:
+                release_db_connection(conn)
 
     return app
 

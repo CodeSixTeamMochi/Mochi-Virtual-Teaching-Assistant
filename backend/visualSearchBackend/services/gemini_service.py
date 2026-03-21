@@ -3,7 +3,7 @@ import base64
 import logging
 import uuid  # Added for unique ID generation
 from google import genai
-from google.genai import types
+import google.generativeai as genai
 from flask import current_app
 
 logger = logging.getLogger(__name__)
