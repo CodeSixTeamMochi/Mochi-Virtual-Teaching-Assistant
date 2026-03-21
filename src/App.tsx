@@ -8,6 +8,14 @@ import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
+import HealthData from "./pages/HealthData";
+import VisualSearch from "./pages/VisualSearch";
+import LessonPlaneHome from "./pages/LessonPlaneHome";
+import CreateLesson from "./pages/CreateLesson";
+import EditLesson from "./pages/EditLesson";
+import PlayLesson from "./pages/PlayLesson";
+import ReinforcedLearning from "./pages/ReinforcedLearning";
+import PhoneticDashboard from "./pages/PhoneticDashboard";
 
 import TeacherDashboard from "./pages/TeacherDashboard";
 import LessonsPage from "./pages/LessonsPage";
@@ -46,6 +54,14 @@ const App = () => (
           <Route path="/students" element={<StudentsPage />} />
           <Route path="/timetable" element={<TimetablePage />} />
 
+          <Route path="/health-data" element={<HealthData />} />
+          <Route path="/visual-search" element={<VisualSearch/>} />
+          <Route path="/LessonPlaneHome" element={<LessonPlaneHome />} />
+          <Route path="/CreateLesson" element={<CreateLesson />} />
+          <Route path="/EditLesson/:id" element={<EditLesson />} />
+          <Route path="/PlayLesson/:id" element={<PlayLesson />} />
+          <Route path="/reinforced-learning" element={<ReinforcedLearning />} />
+          <Route path="/phonetic-dashboard" element={<PhoneticDashboard />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

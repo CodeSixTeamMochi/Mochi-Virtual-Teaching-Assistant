@@ -28,22 +28,6 @@ const ForgotPassword = () => {
       return;
     }
 
-    // TODO: Replace with actual API call
-    // try {
-    //   const response = await fetch('/api/auth/forgot-password', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({ email })
-    //   });
-    //   const data = await response.json();
-    //   if (data.success) {
-    //     setIsSubmitted(true);
-    //   } else {
-    //     setError(data.message);
-    //   }
-    // } catch (err) {
-    //   setError('Connection error. Please try again.');
-    // }
 
     // Mock for demo
     setTimeout(() => {

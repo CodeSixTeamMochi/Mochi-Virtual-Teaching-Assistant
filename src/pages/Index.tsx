@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { LogIn, Sparkles } from 'lucide-react';
 import mochiMascot from '@/assets/mochi-mascot.jpeg';
 
+
 const Index = () => {
   return (
     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
