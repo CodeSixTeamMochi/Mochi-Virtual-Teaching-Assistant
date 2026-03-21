@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Heart, Search, Plus } from "lucide-react";
-import { Student } from "@/Data/mockData.ts";
+import { Student } from "@/Data/mockData";
 import StudentCard from "./StudentCard";
 import StudentHealthModal from "./StudentHealthModal";
-import { studentsAPI, classroomsAPI } from "@/services/api";
+import { classroomsAPI } from "@/services/api";
 
 interface Props {
   students: Student[];
@@ -12,71 +12,43 @@ interface Props {
 
 const StudentHealthRecords = ({ students, onAddStudent }: Props) => {
   const [search, setSearch] = useState("");
-  const [selectedClass, setSelectedClass] = useState("");
+  // FIXED: Default to "All Classes" so the invisible filter is removed!
+  const [selectedClass, setSelectedClass] = useState("All Classes"); 
   const [isModalOpen, setIsModalOpen] = useState(false);
   
-  // Database students - NOW FETCHING FROM DATABASE
-  const [databaseStudents, setDatabaseStudents] = useState<Array<{
-    id: string;
-    name: string;
-    parentPhone: string;
-    classGroup: string;
-  }>>([]);
-  
-  // Classrooms - NOW FETCHING FROM DATABASE
   const [classOptions, setClassOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Fetch students and classrooms from database on mount
+  // Fetch classrooms from database on mount
   useEffect(() => {
-    const fetchData = async () => {
+    const fetchClassrooms = async () => {
       try {
         setLoading(true);
-        
-        // Fetch students
-        const studentsData = await studentsAPI.getAll();
-        setDatabaseStudents(studentsData);
-        
-        // Fetch classrooms
         const classroomsData = await classroomsAPI.getAll();
-        const classNames = classroomsData.map((c: any) => c.name);
-        setClassOptions(classNames);
-        
-        // Set default selected class to first classroom
-        if (classNames.length > 0) {
-          setSelectedClass(classNames[0]);
-        }
+        // Handle different possible DB column names (name vs room_number)
+        const classNames = classroomsData.map((c: any) => c.name || c.room_number || c.classGroup);
+        setClassOptions(classNames.filter(Boolean));
       } catch (err) {
-        console.error("Error fetching data:", err);
-        // Fallback to mock data if API fails
-        setDatabaseStudents([
-          { id: "db-1", name: "Amaya Silva", parentPhone: "+94 77 111 2222", classGroup: "Class A" },
-          { id: "db-2", name: "Dineth Fernando", parentPhone: "+94 77 222 3333", classGroup: "Class A" },
-          { id: "db-3", name: "Lithmi Perera", parentPhone: "+94 77 333 4444", classGroup: "Class B" },
-          { id: "db-4", name: "Ravindu Jayasinghe", parentPhone: "+94 77 444 5555", classGroup: "Class B" },
-          { id: "db-5", name: "Tharusha Wickramasinghe", parentPhone: "+94 77 555 6666", classGroup: "Class A" },
-          { id: "db-6", name: "Savindi Rajapaksa", parentPhone: "+94 77 666 7777", classGroup: "Class B" },
-        ]);
+        console.error("Error fetching classrooms:", err);
         setClassOptions(["Class A", "Class B"]);
-        setSelectedClass("Class A");
       } finally {
         setLoading(false);
       }
     };
     
-    fetchData();
+    fetchClassrooms();
   }, []);
 
-  // Filter out students already in health records
-  const availableStudents = databaseStudents.filter(
-    (dbStudent) => !students.find((s) => s.id === dbStudent.id)
-  );
-  
-  // Filter students for display
+  // FIXED: We now show students if "All Classes" is selected OR if it matches
   const filtered = students.filter(
     (s) =>
-      s.classGroup === selectedClass &&
+      (selectedClass === "All Classes" || s.classGroup === selectedClass) &&
       s.name.toLowerCase().includes(search.toLowerCase())
+  );
+
+  // Find students who don't have health data yet for the Add Modal
+  const availableStudents = students.filter(
+    (s) => (!s.allergies || s.allergies.length === 0) && (!s.medicines || s.medicines.length === 0)
   );
 
   return (
@@ -110,15 +82,13 @@ const StudentHealthRecords = ({ students, onAddStudent }: Props) => {
               onChange={(e) => setSelectedClass(e.target.value)}
               className="h-9 w-40 rounded-lg border border-input bg-secondary/50 px-3 text-sm text-card-foreground outline-none focus:ring-1 focus:ring-ring"
             >
-              {classOptions.length === 0 ? (
-                <option value="">Loading...</option>
-              ) : (
-                classOptions.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))
-              )}
+              {/* FIXED: Added the All Classes option */}
+              <option value="All Classes">All Classes</option>
+              {classOptions.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
             </select>
             <button
               onClick={() => setIsModalOpen(true)}
@@ -156,7 +126,6 @@ const StudentHealthRecords = ({ students, onAddStudent }: Props) => {
         onClose={() => setIsModalOpen(false)}
         onSave={onAddStudent} 
         availableStudents={availableStudents}
-        classOptions={classOptions}
       />
     </>
   );

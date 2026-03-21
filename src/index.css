@@ -199,15 +199,16 @@
   }
 
   /* Feature card styles for homepage */
-  .feature-card {
-    @apply bg-card rounded-2xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 cursor-pointer;
-    box-shadow: 0 4px 20px -4px hsl(220 20% 50% / 0.1);
-  }
+/* Feature card styles for homepage */
+.feature-card {
+  @apply bg-card rounded-2xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 cursor-pointer;
+  box-shadow: 0 4px 20px -4px hsl(220 20% 50% / 0.1);
+}
 
-  .feature-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px -4px hsl(220 20% 50% / 0.15);
-  }
+.feature-card:hover {
+  @apply -translate-y-1;
+  box-shadow: 0 8px 30px -4px hsl(220 20% 50% / 0.15);
+}
 
   .feature-icon {
     @apply w-12 h-12 rounded-xl flex items-center justify-center;
@@ -292,10 +293,10 @@
   
   .font-nunito {
     font-family: 'Nunito', sans-serif;
-
+  }
     .text-balance {
     text-wrap: balance;
-  }
+  
   }
 
   @keyframes float {

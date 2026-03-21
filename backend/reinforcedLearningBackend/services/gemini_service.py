@@ -1,11 +1,10 @@
 import os
 import json
-import base64
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
-# Configure Gemini
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
-model = genai.GenerativeModel('models/gemini-2.0-flash')
+# Configure the NEW Gemini Client
+client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
 
 # MOCHI SYSTEM INSTRUCTION 
 MOCHI_INSTRUCTIONS = """
@@ -49,31 +48,42 @@ SAFETY:
 """
 
 def generate_mochi_reply(audio_data, past_messages):
-    """Handles the base64 encoding and communication with Gemini."""
+    """Handles communication with the new Gemini SDK."""
     try:
-        encoded_audio = base64.b64encode(audio_data).decode('utf-8')
+        # 1. In the NEW SDK, System Instructions go into a Config object
+        config = types.GenerateContentConfig(
+            system_instruction=MOCHI_INSTRUCTIONS + "\nIMPORTANT: Refer to the previous chat history to answer questions about the child's name or interests.",
+            temperature=0.7
+        )
 
-        contents = [
-            {"role": "user", "parts": [{"text": MOCHI_INSTRUCTIONS + "\nIMPORTANT: Refer to the previous chat history to answer questions about the child's name or interests."}]},
-            {"role": "model", "parts": [{"text": "I will remember the child's details from our conversation history!"}]}
-        ]
+        contents = []
 
+        # 2. Add Past Messages using the new types.Content structure
         for msg in past_messages[-6:]:
-            gemini_role = "user" if msg['role'] == 'child' else "model"
-            contents.append({
-                "role": gemini_role, 
-                "parts": [{"text": msg['text']}]
-            })
+            role = "user" if msg['role'] == 'child' else "model"
+            contents.append(
+                types.Content(
+                    role=role, 
+                    parts=[types.Part.from_text(text=msg['text'])]
+                )
+            )
 
-        contents.append({
-            "role": "user", 
-            "parts": [
-                {"text": "Please listen to this and answer based on what we've talked about before."},
-                {"inline_data": {"mime_type": "audio/webm", "data": encoded_audio}}
-            ]
-        })
+        # 3. Add the NEW Audio Request
+        # The new SDK handles raw bytes directly, no need for manual base64!
+        audio_part = types.Part.from_bytes(data=audio_data, mime_type="audio/webm")
+        text_part = types.Part.from_text(text="Please listen to this and answer based on what we've talked about before.")
+        
+        contents.append(
+            types.Content(role="user", parts=[text_part, audio_part])
+        )
 
-        response = model.generate_content(contents)
+        # 4. Generate Content using the client directly
+        response = client.models.generate_content(
+            model='gemini-2.0-flash', 
+            contents=contents,
+            config=config
+        )
+        
         raw_text = response.text.replace('```json', '').replace('```', '').strip()
 
         try:

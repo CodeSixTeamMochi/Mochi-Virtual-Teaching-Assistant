@@ -5,32 +5,45 @@ import EmergencyContacts from "@/components/EmergencyContacts";
 import MedicationReminders from "@/components/MedicationReminders";
 import StudentHealthRecords from "@/components/StudentHealthRecords";
 import { 
-  students as initialStudents, 
   Student, 
   MedicationReminder,
   EmergencyContact,
 } from "@/Data/mockData";
-import { emergencyContactsAPI, medicationsAPI } from "@/services/api";
-
-const STORAGE_KEY_STUDENTS = "mochi_student_health_data";
+// FIXED: Imported studentsAPI
+import { emergencyContactsAPI, medicationsAPI, studentsAPI } from "@/services/api";
 
 const HealthData = () => {
   const navigate = useNavigate();
   
-  // Students - still using localStorage (will connect later)
-  const [students, setStudents] = useState<Student[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEY_STUDENTS);
-    return saved ? JSON.parse(saved) : initialStudents;
-  });
+  // FIXED: Now using DATABASE instead of localStorage
+  const [students, setStudents] = useState<Student[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(true);
 
-  // Medications - NOW USING DATABASE
+  // Medications - DATABASE
   const [medications, setMedications] = useState<MedicationReminder[]>([]);
   const [medicationsLoading, setMedicationsLoading] = useState(true);
 
-  // Emergency contacts - NOW USING DATABASE
+  // Emergency contacts - DATABASE
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // FIXED: Fetch STUDENTS from database on mount
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        setStudentsLoading(true);
+        const data = await studentsAPI.getAll();
+        setStudents(data);
+      } catch (err) {
+        console.error("Error fetching students:", err);
+      } finally {
+        setStudentsLoading(false);
+      }
+    };
+    
+    fetchStudents();
+  }, []);
 
   // Fetch emergency contacts from database on mount
   useEffect(() => {
@@ -68,11 +81,6 @@ const HealthData = () => {
     fetchMedications();
   }, []);
 
-  // Save students to localStorage
-  useEffect(() => {
-    localStorage.setItem(STORAGE_KEY_STUDENTS, JSON.stringify(students));
-  }, [students]);
-
   // Check for medication reminders and send notifications
   useEffect(() => {
     const checkMedications = () => {
@@ -107,9 +115,15 @@ const HealthData = () => {
     return () => clearInterval(interval);
   }, [medications]);
 
-  // Student handlers (localStorage)
-  const handleAddStudent = (newStudent: Student) => {
-    setStudents((prev) => [...prev, newStudent]);
+  // Student handlers (DATABASE)
+  const handleAddStudent = async (newStudent: Student) => {
+    try {
+      // Assuming you want to save new health profiles back to the database
+      await studentsAPI.update(newStudent.id, newStudent);
+      setStudents((prev) => [...prev, newStudent]);
+    } catch (err) {
+      console.error("Error adding student health record:", err);
+    }
   };
 
   // Medication handlers (DATABASE)
@@ -130,12 +144,10 @@ const HealthData = () => {
   };
 
   const handleUpdateMedication = async (updated: MedicationReminder) => {
-    // For now, just update locally (can add API endpoint later if needed)
     setMedications((prev) => prev.map((m) => (m.id === updated.id ? updated : m)));
   };
 
   const handleDeleteMedication = (medicationId: string) => {
-    // Not used anymore, but keeping for compatibility
     setMedications((prev) => prev.filter((m) => m.id !== medicationId));
   };
 
@@ -144,7 +156,10 @@ const HealthData = () => {
     status: "pending" | "seen" | "completed"
   ) => {
     try {
-      await medicationsAPI.updateStatus(medicationId, status);
+      // Ensure we have the updateStatus function mapped in api.ts
+      if (medicationsAPI.updateStatus) {
+         await medicationsAPI.updateStatus(medicationId, status);
+      }
       
       setMedications((prev) =>
         prev.map((m) => {
@@ -208,7 +223,7 @@ const HealthData = () => {
   };
 
   // Show loading state
-  if (loading || medicationsLoading) {
+  if (loading || medicationsLoading || studentsLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">

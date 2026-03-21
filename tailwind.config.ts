@@ -53,6 +53,7 @@ export default {
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
+        },  
         emergency: {
           DEFAULT: "hsl(var(--emergency))",
           foreground: "hsl(var(--emergency-foreground))",

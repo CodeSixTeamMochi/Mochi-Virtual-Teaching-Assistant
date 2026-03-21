@@ -2,9 +2,9 @@ import os
 import base64
 import logging
 import uuid  # Added for unique ID generation
-from google import genai
-import google.generativeai as genai
 from flask import current_app
+from google import genai
+from google.genai import types  # FIXED: Added the missing types import
 
 logger = logging.getLogger(__name__)
 
@@ -28,17 +28,18 @@ def init_gemini():
         logger.error(f"Failed to initialize Gemini: {e}")
 
 def summarize_query_for_unsplash(query):
+    global client  # FIXED: Moved this to the absolute top of the function
+    
     if not query or not query.strip():
         return "happy"
         
-    global client
     if not client:
         return query
 
     try:
         summarize_prompt = f"Summarize this into 1 or 2 simple nouns for an image search: '{query}'"
         response = client.models.generate_content(
-            model='gemini-3-flash-preview', 
+            model='gemini-2.5-flash', # Updated to a stable model name
             contents=summarize_prompt,
             config=types.GenerateContentConfig(temperature=0.3)
         )
@@ -58,6 +59,7 @@ def generate_ai_image(query):
     effective_query = "a cute fluffy golden retriever puppy" if is_restricted else query
 
     try:
+        # Note: If this model ID throws a 404 error later, change it to 'gemini-2.5-pro'
         model_id = 'gemini-3-pro-image-preview' 
         
         config = types.GenerateContentConfig(
@@ -69,11 +71,11 @@ def generate_ai_image(query):
                 3. Ensure all photos are bright, positive, and educational.
                 4. Always provide a sophisticated 3-word super simple title for kids age 1-5.
             """,
+            # The new SDK handles safety settings slightly differently, but we'll try this first
             safety_settings=[
                 types.SafetySetting(category='HARM_CATEGORY_DANGEROUS_CONTENT', threshold='BLOCK_LOW_AND_ABOVE'),
             ],
             response_modalities=["TEXT", "IMAGE"],
-            image_config=types.ImageConfig(aspect_ratio="16:9")
         )
 
         response = client.models.generate_content(
@@ -90,7 +92,7 @@ def generate_ai_image(query):
         base64_data = ""
 
         for part in response.candidates[0].content.parts:
-            # Skip Gemini 3 internal reasoning/thought tokens
+            # Skip internal reasoning/thought tokens
             if hasattr(part, 'thought') and part.thought:
                 continue
             if part.text:

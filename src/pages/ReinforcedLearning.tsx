@@ -547,7 +547,7 @@ export default function ReinforcedLearning() {
         )}
 
         {/* MOCHI AVATAR WRAPPER */}
-        <div className={`gap-5 transition-all duration-700 ease-[cubic-bezier(0.34,1.56,0.64,1)] z-50 flex flex-col items-center justify-center
+        <div className={`gap-5 transition-all duration-700 ease-[cubic-bezier(0.34_1.56_0.64_1)] z-50 flex flex-col items-center justify-center
           ${correctionMode === 'SHOWING_CARD' ? 'absolute bottom-4 left-4 md:bottom-10 md:left-10 scale-[0.60] origin-bottom-left' : 'w-full max-w-2xl scale-100'}
           ${correctionMode === 'ASKING_YES_NO' ? '-translate-x-[150px] md:-translate-x-[175px]' : 'translate-x-0'}
         `}>

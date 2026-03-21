@@ -1,55 +1,6 @@
 // ============================================================
 // API Service Layer for Mochi - Virtual Teaching Assistant
 // ============================================================
-// TODO: Connect to Flask backend using psycopg2 adapter for PostgreSQL persistence
-//
-// Future endpoints:
-//   GET    /api/students            — fetch all students
-//   PUT    /api/students/:id        — update student health record
-//   GET    /api/medication-alerts   — fetch all medication alerts
-//   POST   /api/medication-alerts   — create a medication alert
-//   PATCH  /api/medication-alerts/:id — update alert status (seen/done)
-//   GET    /api/emergency-contacts  — fetch emergency contacts
-//
-// Example Flask connection (Python):
-//   import psycopg2
-//   conn = psycopg2.connect(
-//       host="localhost",
-//       database="mochi_db",
-//       user="mochi_user",
-//       password="secure_password"
-//   )
-//
-// PostgreSQL Schema:
-//   CREATE TABLE students (
-//       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//       name VARCHAR(100) NOT NULL,
-//       parent_phone VARCHAR(20) NOT NULL,
-//       class_group VARCHAR(20) NOT NULL,
-//       allergies TEXT[] DEFAULT '{}',
-//       medicines TEXT[] DEFAULT '{}'
-//   );
-//
-//   CREATE TABLE medication_alerts (
-//       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//       student_id UUID REFERENCES students(id),
-//       student_name VARCHAR(100) NOT NULL,
-//       medication VARCHAR(200) NOT NULL,
-//       time VARCHAR(10) NOT NULL,
-//       instructions TEXT,
-//       status VARCHAR(20) DEFAULT 'pending',
-//       seen_at TIMESTAMP,
-//       done_at TIMESTAMP,
-//       created_at TIMESTAMP DEFAULT NOW()
-//   );
-//
-//   CREATE TABLE emergency_contacts (
-//       id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-//       name VARCHAR(100) NOT NULL,
-//       phone VARCHAR(20) NOT NULL,
-//       icon VARCHAR(20) NOT NULL
-//   );
-// ============================================================
 
 import { Student, MedicationReminder } from "@/Data/mockData";
 
@@ -60,29 +11,24 @@ export const api = {
   // Student endpoints (mock)
   async getStudents(): Promise<Student[]> {
     await delay(100);
-    // TODO: return fetch("/api/students").then(r => r.json());
     const { students } = await import("@/Data/mockData");
     return students;
   },
 
   async updateStudent(student: Student): Promise<Student> {
     await delay(100);
-    // TODO: return fetch(`/api/students/${student.id}`, { method: "PUT", body: JSON.stringify(student) }).then(r => r.json());
     return student;
   },
 
   // Medication alert endpoints (mock)
   async getMedicationAlerts(): Promise<MedicationReminder[]> {
     await delay(100);
-    // TODO: return fetch("/api/medication-alerts").then(r => r.json());
     const { medicationReminders } = await import("@/Data/mockData");
     return medicationReminders;
   },
-
-  //
 };
 
-//db connection 
+// --- REAL DATABASE CONNECTIONS ---
 const API_BASE_URL = 'http://127.0.0.1:5000';
 
 export const emergencyContactsAPI = {
@@ -119,4 +65,79 @@ export const emergencyContactsAPI = {
     if (!response.ok) throw new Error('Failed to delete contact');
     return response.json();
   },
+};
+
+// --- ADDED MISSING APIs BELOW FOR THE STUDENT INFO TEAM ---
+
+export const studentsAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/students`);
+    if (!response.ok) throw new Error('Failed to fetch students');
+    return response.json();
+  },
+  
+  update: async (id: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}/api/students/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update student');
+    return response.json();
+  }
+};
+
+export const classroomsAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/classrooms`);
+    if (!response.ok) throw new Error('Failed to fetch classrooms');
+    return response.json();
+  }
+};
+
+export const medicationsAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/api/medications`); 
+    if (!response.ok) throw new Error('Failed to fetch medications');
+    return response.json();
+  },
+
+  add: async (data: any) => {
+    const response = await fetch(`${API_BASE_URL}/api/medications`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to add medication');
+    return response.json();
+  },
+
+  update: async (id: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}/api/medications/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update medication');
+    return response.json();
+  },
+
+  // FIXED: Added the missing updateStatus function your frontend is looking for!
+  updateStatus: async (id: string, status: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/medications/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!response.ok) throw new Error('Failed to update medication status');
+    return response.json();
+  },
+
+  delete: async (id: string) => {
+    const response = await fetch(`${API_BASE_URL}/api/medications/${id}`, {
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error('Failed to delete medication');
+    return response.json();
+  }
 };

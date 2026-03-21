@@ -4,7 +4,7 @@ import re
 import requests
 import uuid
 from flask import Blueprint, request, jsonify
-import google.generativeai as genai
+from google import genai  # FIXED: New SDK Import
 from dotenv import load_dotenv
 from db import get_db_connection, release_db_connection
 
@@ -15,8 +15,10 @@ lessons_bp = Blueprint('lessons', __name__, url_prefix='/api')
 GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY')
 UNSPLASH_ACCESS_KEY = os.environ.get('UNSPLASH_ACCESS_KEY')
 
+# FIXED: Initialize the new Client instead of genai.configure()
+client = None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    client = genai.Client(api_key=GEMINI_API_KEY)
 
 def fetch_unsplash_image(query: str) -> str:
     """Fetch an image URL from Unsplash for a given search query."""
@@ -52,10 +54,8 @@ def generate_lesson():
 
         if not topic:
             return jsonify({'success': False, 'error': 'Topic is required'}), 400
-        if not GEMINI_API_KEY:
+        if not GEMINI_API_KEY or not client:
             return jsonify({'success': False, 'error': 'GEMINI_API_KEY not configured'}), 500
-
-        model = genai.GenerativeModel('gemini-2.0-flash')
         
         prompt = f"""Generate an educational lesson about "{topic}" for children aged 4-8.
         Return a valid JSON object with this exact structure:
@@ -73,7 +73,12 @@ def generate_lesson():
         }}
         Generate exactly {item_count} items. Keep language simple. Only return JSON."""        
 
-        response = model.generate_content(prompt)
+        # FIXED: Use the new client to generate content
+        response = client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt
+        )
+        
         json_match = re.search(r'\{[\s\S]*\}', response.text)
         if not json_match:
             raise ValueError('Could not parse JSON from response')
