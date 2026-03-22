@@ -25,7 +25,7 @@ const App = () => (
           <Route path="/login" element={<Login />} />
           <Route path="/home" element={<Home />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />
-          <Route path="/revision-games" element={<RevisionGames />} />
+          <Route path="/revision-Games" element={<RevisionGames />} />
           <Route path="/create-activity" element={<CreateActivity />} />
           <Route path="/game/:categoryId" element={<GamePage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
