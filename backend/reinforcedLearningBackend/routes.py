@@ -28,19 +28,19 @@ def chat_with_mochi():
                 cursor = conn.cursor()
                 error_data = reply_data["speech_error"]
                 
-                # Assuming student_id is 1 for the demo. You can make this dynamic later!
-                student_id = 1 
+                error_type = error_data.get("error_type", "Phonetic Error")
+                detected = error_data.get("detected_speech", "")
+                correction = error_data.get("correction_given", "")
+
+                formatted_comment = f"[{error_type}] Said: '{detected}' | Target: '{correction}' | Status: Needs Practice"
+
+                student_id = 1 # Hardcoded for demo
+                score = 50     # Standard score for a mistake
                 
                 cursor.execute("""
-                    INSERT INTO speech_assessments 
-                    (student_id, error_type, detected_speech, correction_given, status) 
-                    VALUES (%s, %s, %s, %s, 'needs_practice')
-                """, (
-                    student_id, 
-                    error_data.get("error_type", "Phonetic Error"), 
-                    error_data.get("detected_speech", ""), 
-                    error_data.get("correction_given", "")
-                ))
+                    INSERT INTO speech_assessments (student_id, score, comments)
+                    VALUES (%s, %s, %s)
+                """, (student_id, score, formatted_comment))
                 
                 conn.commit()
                 cursor.close()
@@ -61,7 +61,18 @@ def get_speech_assessments():
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        cursor.execute("SELECT id, student_id, error_type, detected_speech, correction_given, status FROM speech_assessments ORDER BY id DESC;")
+        
+        # Dynamically generating an ID to bypass the schema mismatch
+        cursor.execute("""
+            SELECT 
+                row_number() OVER () AS id,
+                sa.score, 
+                sa.comments, 
+                st.name AS student_name 
+            FROM speech_assessments sa
+            JOIN students st ON sa.student_id = st.student_id;
+        """)
+
         columns = [desc[0] for desc in cursor.description]
         records = [dict(zip(columns, row)) for row in cursor.fetchall()]
         cursor.close()
@@ -76,9 +87,16 @@ def update_assessment(id):
     conn = get_db_connection()
     try:
         data = request.get_json()
-        new_status = data.get('status', 'mastered')
+        new_comment_addition = data.get('comments', ' [MASTERED]')
+
         cursor = conn.cursor()
-        cursor.execute("UPDATE speech_assessments SET status = %s WHERE id = %s", (new_status, id))
+
+        cursor.execute("""
+            UPDATE speech_assessments
+            SET comments = comments || %s
+            WHERE id = %s
+        """, (new_comment_addition, id))
+
         conn.commit()
         cursor.close()
         return jsonify({"message": "Successfully updated!"})
@@ -99,6 +117,23 @@ def delete_assessment(id):
         return jsonify({"message": "Successfully deleted!"})
     except Exception as e:
         conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        release_db_connection(conn)
+
+@rl_bp.route('/students', methods=['GET'])
+def get_classroom_roster():
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        # Fetch every student from the Neon DB in alphabetical order
+        cursor.execute("SELECT name FROM students ORDER BY name ASC;")
+        
+        # Format it into a clean list of names: ["Emma Johnson", "Liam Smith", ...]
+        records = [row[0] for row in cursor.fetchall()]
+        cursor.close()
+        return jsonify(records)
+    except Exception as e:
         return jsonify({"error": str(e)}), 500
     finally:
         release_db_connection(conn)

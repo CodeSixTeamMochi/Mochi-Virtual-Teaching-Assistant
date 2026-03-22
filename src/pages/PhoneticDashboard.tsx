@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Mic, AlertTriangle, Users, MessageSquare} from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -6,45 +6,61 @@ import { Card } from "@/components/ui/card";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
-
-interface Student {
-  id: number;
-  name: string;
-}
-
-const mockAssessments = [
-  { id: 1, session: 'Mon', student_id: 1, score: 45, comments: "Struggled with 'R' sound. Said 'wabbit'." },
-  { id: 2, session: 'Tue', student_id: 1, score: 55, comments: "Improving! Corrected 'red' on second attempt." },
-  { id: 3, session: 'Wed', student_id: 1, score: 70, comments: "Great progress with R sounds today." },
-  { id: 4, session: 'Mon', student_id: 2, score: 85, comments: "Excellent pronunciation. Very attentive." },
-  { id: 5, session: 'Wed', student_id: 2, score: 92, comments: "Mastered the requested vocabulary." },
-  { id: 6, session: 'Tue', student_id: 3, score: 40, comments: "Having trouble with 'TH' sounds. Needs practice." },
-];
+import axios from 'axios';
 
 const PhoneticDashboard = () => {
 
     const navigate = useNavigate();
 
-    // State for the classroom dropdown
-    const [selectedStudent, setSelectedStudent] = useState<number | "all">("all");
+    //  State for real Database Data
+    const [assessments, setAssessments] = useState<any[]>([]);
+    const [students, setStudents] = useState<string[]>([]);
+    const [loading, setLoading] = useState(true);
 
-    // Mock student list(to be fetched from database)
-    const [students] = useState<Student[]>([
-        { id: 1, name: "Emma Johnson" },
-        { id: 2, name: "Liam Smith" },
-        { id: 3, name: "Sophia Davis" }
-    ]);
+    const [selectedStudent, setSelectedStudent] = useState<string | "all">("all");
+
+    // Fetch data from Neon Database via Flask
+
+     useEffect(() => {
+        const fetchData = async () => {
+            try {
+                // Fetch the full classroom roster for the Dropdown
+                const rosterResponse = await axios.get('http://localhost:5000/api/students');
+                setStudents(rosterResponse.data);
+
+                // Fetch the actual assessment logs for the Cards & Graph
+                const assessmentResponse = await axios.get('http://localhost:5000/api/speech-assessments');
+                setAssessments(assessmentResponse.data);
+                
+                setLoading(false);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+                setLoading(false);
+            }
+        };
+
+        fetchData();
+    }, []);
 
     // Filter the assessments based on the dropdown selection
     const filteredData = selectedStudent === "all"
-      ? mockAssessments
-      : mockAssessments.filter(a => a.student_id === selectedStudent);
+        ? assessments
+        : assessments.filter(a => a.student_name === selectedStudent);
+
+    //Prepare data for the graph
+    const chartData = [...filteredData].reverse().map((item, index) => ({
+        ...item,
+        session: `Session ${index + 1}`
+    }));
+
     // Calculate dynamic stats for the top cards
     const totalSessions = filteredData.length;
     const averageScore = totalSessions > 0
       ? Math.round(filteredData.reduce((acc, curr) => acc + curr.score, 0) / totalSessions)
       : 0;
-    const latestScore = totalSessions > 0 ? filteredData[totalSessions - 1].score : 0;
+
+    // Assessments are ordered DESC by the DB, so the first one [0] is the most recent!
+    const latestScore = totalSessions > 0 ? filteredData[0].score : 0;
 
     return (
         <div className="min-h-screen bg-background p-6">
@@ -74,12 +90,12 @@ const PhoneticDashboard = () => {
                         <select 
                             className="bg-transparent border-none text-sm font-medium text-foreground focus:ring-0 cursor-pointer p-2 outline-none"
                             value={selectedStudent}
-                            onChange={(e) => setSelectedStudent(e.target.value === "all" ? "all" : Number(e.target.value))}
+                            onChange={(e) => setSelectedStudent(e.target.value)}
                         >   
                             <option value="all">Entire Classroom</option>
-                            {students.map(student => (
-                                <option key={student.id} value={student.id}>
-                                    {student.name}
+                            {students.map((studentName, index) => (
+                                <option key={index} value={studentName}>
+                                    {studentName}
                                 </option>
                             ))}
                         </select>
@@ -90,21 +106,25 @@ const PhoneticDashboard = () => {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <Card className="p-6 flex flex-col justify-center items-center bg-card border-border shadow-sm">
                         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Average Score</h3>
-                        <p className="text-4xl font-bold text-foreground mt-2">{averageScore}%</p>
+                        <p className="text-4xl font-bold text-foreground mt-2">
+                             {loading ? "..." : `${averageScore}%`}
+                        </p>
                     </Card>
 
                     <Card className="p-6 flex flex-col justify-center items-center bg-card border-border shadow-sm">
                         <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Sessions Tracked</h3>
-                        <p className="text-4xl font-bold text-primary mt-2">{totalSessions}</p>
+                        <p className="text-4xl font-bold text-primary mt-2">
+                            {loading ? "..." : totalSessions}
+                        </p>
                     </Card>
 
                     <Card className="p-6 flex flex-col justify-center items-center bg-card border-border shadow-sm">
-                        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Latest Score</h3>
+                        <h3 className="text-sm fonst-semibold text-muted-foreground uppercase tracking-wider">Latest Score</h3>
                         <p className={`
                             text-4xl font-bold mt-2 
                             ${latestScore >= 70 ? 'text-green-500' : 'text-amber-500'}
                         `}>
-                            {latestScore}%
+                            {loading ? "..." : `${latestScore}%`}
                         </p>
                     </Card>
                 </div>
@@ -118,14 +138,16 @@ const PhoneticDashboard = () => {
                         <div className="p-4 bg-muted/30 border-b border-border">
                             <h2 className="font-semibold text-foreground flex items-center gap-2">
                                 <AlertTriangle className="h-4 w-4 text-primary" />
-                                Progress Trend {selectedStudent !== "all" ? `- ${students.find(s => s.id === selectedStudent)?.name}` : "(Class Average)"}
+                                Progress Trend {selectedStudent !== "all" ? `- ${selectedStudent}` : "(Class Average)"}
                             </h2>
                         </div>
 
                         <div className="p-6 h-[350px] w-full bg-card flex-1">
-                            {filteredData.length > 0 ? (
+                            {loading ? (
+                                <div className="h-full flex items-center justify-center text-muted-foreground">Loading chart...</div>
+                            ) : chartData.length > 0 ? (
                                 <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={filteredData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                                         <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
                                         <XAxis dataKey="session" axisLine={false} tickLine={false} tick={{ fill: '#888888', fontSize: 12 }} dy={10} />
                                         <YAxis axisLine={false} tickLine={false} tick={{ fill: '#888888', fontSize: 12 }} domain={[0, 100]} />
@@ -162,11 +184,14 @@ const PhoneticDashboard = () => {
                         </div>
 
                         <div className="p-4 flex-1 overflow-y-auto space-y-3 bg-card">
-                            {[...filteredData].reverse().map((assessment) => (
+                            {loading ? (
+                                <p className="text-sm text-muted-foreground text-center mt-10">Syncing with Mochi...</p>
+                            ) : filteredData.length > 0 ? (
+                                filteredData.map((assessment) => (
                                 <div key={assessment.id} className="p-3 bg-muted/30 rounded-lg border border-border/50">
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="text-xs font-bold text-muted-foreground uppercase">
-                                            {selectedStudent === "all" ? students.find(s => s.id === assessment.student_id)?.name : `${assessment.session} Session`}
+                                            {assessment.student_name}
                                         </span>
                                         <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${assessment.score >= 70 ? 'bg-green-500/10 text-green-600' : 'bg-amber-500/10 text-amber-600'}`}>
                                             {assessment.score}%
@@ -176,10 +201,11 @@ const PhoneticDashboard = () => {
                                         "{assessment.comments}"
                                     </p>
                                 </div>
-                            ))}
+                            ))
 
-                            {filteredData.length === 0 && (
+                            ) : (
                                 <p className="text-sm text-muted-foreground text-center mt-10">No logs found.</p>
+
                             )}
 
                         </div>
