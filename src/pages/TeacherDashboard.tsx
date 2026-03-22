@@ -166,7 +166,10 @@ const handleSaveEdit = async (id: number) => {
       {/* ================= TOPBAR ================= */}
       <div className="bg-white border-b border-[#e2e8f0] shadow-sm sticky top-0 z-50">
         <div className="flex items-center justify-between py-3 px-6 max-w-[1200px] mx-auto">
-          <div className="flex items-center gap-3">
+          <div 
+            className="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={() => navigate('/home')}
+          >
             <div className="w-[42px] h-[42px] rounded-full bg-[#cffafe] flex items-center justify-center border-2 border-[#a5f3fc] text-[22px] shrink-0">
               <div className="w-[42px] h-[42px] rounded-full overflow-hidden border-2 border-[#a5f3fc] shrink-0">
                 <img src="src\assets\mochi-mascot.jpeg" alt="Mochi Logo" className="w-full h-full object-cover" />

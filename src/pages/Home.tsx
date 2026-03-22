@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Image } from 'lucide-react';
-import mochiAvatar from '@/assets/mochi-avatar.jpeg';
+import mochiAvatar from '@/assets/mochi-avatar-gif.gif';
 
 
 // TODO: Database Integration
@@ -23,7 +23,7 @@ const Home = () => {
 
   const features = [
     { id: 'visual-search', name: 'Visual Search', icon: Image },
-    { id: 'revision-games', name: 'Revision Games', icon: Image },
+    { id: 'Lessons', name: 'Lessons', icon: Image },
     { id: 'pronunciation', name: 'Correct Pronunciation', icon: Image },
     { id: 'dashboard', name: 'Dashboard', icon: Image },
   ];
@@ -38,7 +38,7 @@ const Home = () => {
       case "visual-search":
         navigate("/visual-search");
         break;
-      case "revision-games":
+      case "Lessons":
         navigate("/LessonPlaneHome");
         break;
       case "pronunciation":
@@ -81,11 +81,11 @@ const Home = () => {
           </div>
 
           {/* Mochi Avatar */}
-          <div className="ml-20 md:ml-32">
+          <div className="ml-24 md:ml-40 flex items-center justify-center">
             <img 
               src={mochiAvatar} 
               alt="Mochi - Virtual Teaching Assistant" 
-              className="w-64 h-64 md:w-80 md:h-80 lg:w-96 lg:h-96 object-contain animate-float drop-shadow-2xl"
+              className="w-[300px] h-[300px] md:w-[450px] md:h-[450px] lg:w-[600px] lg:h-[600px] max-w-[42vw] object-contain animate-float drop-shadow-2xl"
             />
           </div>
         </div>
@@ -98,12 +98,12 @@ const Home = () => {
                 <button
                   key={feature.id}
                   onClick={() => handleFeatureClick(feature.id)}
-                  className="feature-card w-40 h-32 md:w-48 md:h-36"
+                  className="feature-card w-60 h-60 md:w-64 md:h-64"
                 >
                   <div className="feature-icon">
                     <feature.icon size={24} />
                   </div>
-                  <span className="text-foreground font-semibold text-sm md:text-base text-center">
+                  <span className="text-foreground font-semibold text-[1.4rem]  text-center">
                     {feature.name}
                   </span>
                 </button>

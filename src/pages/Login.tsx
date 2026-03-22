@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { LogIn, Eye, EyeOff } from 'lucide-react';
-import mochiMascot from '@/assets/mochi-mascot.jpeg';
+import mochiMascot from '@/assets/mochi-avatar-gif.gif';
 import teacherAvatar from '@/assets/teacher-avatar.png';
 
 // TODO: Database Integration
