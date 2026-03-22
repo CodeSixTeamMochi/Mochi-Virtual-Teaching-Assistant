@@ -21,7 +21,7 @@ def create_app():
     #revision_config.init_db()
 
     # Register Revision Games blueprint
-    app.register_blueprint(revision_games_bp)
+    app.register_blueprint(revision_games_bp, url_prefix="/api/revision")
 
     # ──────────────────────────────────────
     # HEALTH CHECK

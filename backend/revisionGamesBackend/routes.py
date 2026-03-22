@@ -12,7 +12,7 @@ import json
 
 from .gemini_services import generate_questions, generate_feedback
 
-revision_games_bp = Blueprint("revision_games", __name__, url_prefix="/api")
+revision_games_bp = Blueprint("revision_games", __name__, url_prefix="/api/revision")
 
 # --- Categories ---
 
