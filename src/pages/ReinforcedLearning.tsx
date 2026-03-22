@@ -19,6 +19,8 @@ export default function ReinforcedLearning() {
   const [correctionMode, setCorrectionMode] = useState<CorrectionMode>('NONE');
   const [pendingError, setPendingError] = useState<{user: string, target: WordData} | null>(null);
   const [mistakeList, setMistakeList] = useState<{user: string, target: WordData}[]>([]);
+  const [roster, setRoster] = useState<{student_id: number, name: string}[]>([]);
+  const [activeStudentId, setActiveStudentId] = useState<string>("1");
   const mediaRecorder = useRef<any>(null);
   const audioContextRef = useRef<any>(null);
   const wakeWordRecognition = useRef<any>(null);
@@ -33,6 +35,20 @@ export default function ReinforcedLearning() {
 
   const [history, setHistory] = useState<ChatMessage[]>([]); // Stores the chat messages
   const scrollRef = useRef<HTMLDivElement>(null); // Helps us scroll to the latest message
+
+  useEffect(() => {
+    const fetchRoster = async () => {
+      try {
+        const response = await fetch('http://localhost:5000/api/students');
+        const data = await response.json();
+        setRoster(data);
+        if (data.length > 0) setActiveStudentId(String(data[0].student_id));
+      } catch (error) {
+        console.error("Failed to fetch roster:", error);
+      }
+    };
+    fetchRoster();
+  }, []);
 
   const cleanTextForNaturalSpeech = (text: string) => {
     return text.replace(/\./g, ",").replace(/\!/g, ".").trim();
@@ -436,7 +452,7 @@ export default function ReinforcedLearning() {
     setIsThinking(true);
 
     try {
-      const res = await chatWithMochi(blob, history);
+      const res = await chatWithMochi(blob, history, activeStudentId);
       const { transcription, mochiResponse, mood: aiMood, speech_error } = res;
 
        if (speech_error && correctionMode === 'NONE') {
@@ -518,14 +534,38 @@ export default function ReinforcedLearning() {
         </button>
       )}
 
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => navigate("/phonetic-dashboard")}
-        className="absolute top-4 right-4 z-[60] bg-background/50 backdrop-blur-sm border-border hover:bg-muted"
-      >
-        View Teacher Dashboard
-      </Button>
+      <div className="absolute top-4 right-4 z-[60] flex items-center gap-3">
+
+        {/* The Dropdown */}
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md border bg-background/50 backdrop-blur-sm border-border hover:bg-muted transition-colors">
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wide">Playing As:</span>
+          <select 
+            className="bg-transparent border-none text-sm font-bold text-foreground focus:ring-0 cursor-pointer outline-none w-28 md:w-32"
+            value={activeStudentId}
+            onChange={(e) => setActiveStudentId(e.target.value)}
+          >
+            {roster.length === 0 ? (
+                <option>Loading...</option>
+            ) : (
+                roster.map((student) => (
+                    <option key={student.student_id} value={student.student_id}>
+                        {student.name}
+                    </option>
+                ))
+            )}
+          </select>
+        </div>
+
+        {/* The Dashboard Button */}
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => navigate("/phonetic-dashboard")}
+          className="bg-background/50 backdrop-blur-sm border-border hover:bg-muted shadow-none hidden sm:flex"
+        >
+          Teacher Dashboard
+        </Button>
+      </div>
     
       {/* LEFT SIDE: HISTORY BAR */}
       <div className={`h-full w-[300px] md:w-[350px] flex-shrink-0 z-30 transition-all duration-500 flex flex-col [&>*]:h-full ${correctionMode !== 'NONE' ? 'opacity-20  pointer-events-none' : 'opacity-100'}`}>

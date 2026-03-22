@@ -10,6 +10,14 @@ from db import get_db_connection, release_db_connection
 def chat_with_mochi():
     history_json = request.form.get('history', '[]')
     past_messages = json.loads(history_json)
+    
+    raw_student_id = request.form.get('student_id')
+
+    try:
+        student_id = int(raw_student_id) 
+    except (TypeError, ValueError):
+        print(f"⚠️ WARNING: React did not send a valid student_id (Received: {raw_student_id}). Defaulting to 1.")
+        student_id = 1
 
     if 'audio' not in request.files:
         return jsonify({"error": "No audio provided"}), 400
@@ -34,7 +42,6 @@ def chat_with_mochi():
 
                 formatted_comment = f"[{error_type}] Said: '{detected}' | Target: '{correction}' | Status: Needs Practice"
 
-                student_id = 1 # Hardcoded for demo
                 score = 50     # Standard score for a mistake
                 
                 cursor.execute("""
@@ -126,11 +133,14 @@ def get_classroom_roster():
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        # Fetch every student from the Neon DB in alphabetical order
-        cursor.execute("SELECT name FROM students ORDER BY name ASC;")
         
-        # Format it into a clean list of names: ["Emma Johnson", "Liam Smith", ...]
-        records = [row[0] for row in cursor.fetchall()]
+        # 1. Ask the database for BOTH the ID and the Name
+        cursor.execute("SELECT student_id, name FROM students ORDER BY name ASC;")
+        
+        # 2. Package them into a neat dictionary for React
+        columns = [desc[0] for desc in cursor.description]
+        records = [dict(zip(columns, row)) for row in cursor.fetchall()]
+        
         cursor.close()
         return jsonify(records)
     except Exception as e:

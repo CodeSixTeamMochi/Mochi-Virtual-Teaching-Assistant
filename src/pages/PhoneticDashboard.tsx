@@ -24,12 +24,14 @@ const PhoneticDashboard = () => {
      useEffect(() => {
         const fetchData = async () => {
             try {
-                // Fetch the full classroom roster for the Dropdown
-                const rosterResponse = await axios.get('http://localhost:5000/api/students');
-                setStudents(rosterResponse.data);
+                // Fetch the full classroom roster
+                const rosterResponse = await axios.get('http://localhost:5000/students');
+                
+                const namesOnly = rosterResponse.data.map((student: any) => student.name);
+                setStudents(namesOnly);
 
                 // Fetch the actual assessment logs for the Cards & Graph
-                const assessmentResponse = await axios.get('http://localhost:5000/api/speech-assessments');
+                const assessmentResponse = await axios.get('http://localhost:5000/speech-assessments');
                 setAssessments(assessmentResponse.data);
                 
                 setLoading(false);
