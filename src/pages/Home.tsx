@@ -10,6 +10,27 @@ import mochiAvatar from '@/assets/mochi-avatar-gif.gif';
 // 2. Fetch user-specific data and preferences
 // 3. Load personalized dashboard content
 
+/* ☁️ Cloud component */
+const Cloud = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
+  <div className={className} style={style}>
+    <svg viewBox="0 0 200 100" fill="white" fillOpacity="0.7" xmlns="http://www.w3.org/2000/svg">
+      <ellipse cx="60" cy="70" rx="50" ry="30" />
+      <ellipse cx="100" cy="50" rx="55" ry="35" />
+      <ellipse cx="140" cy="65" rx="45" ry="28" />
+      <ellipse cx="80" cy="55" rx="40" ry="25" />
+      <ellipse cx="120" cy="45" rx="35" ry="22" />
+    </svg>
+  </div>
+);
+
+/* ✨ Sparkle dot */
+const SparkleDot = ({ style }: { style: React.CSSProperties }) => (
+  <div
+    className="absolute w-2 h-2 rounded-full bg-primary/60 animate-sparkle pointer-events-none"
+    style={style}
+  />
+);
+
 const Home = () => {
   const navigate = useNavigate();
 
@@ -56,7 +77,38 @@ const Home = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background relative">
+    <div className="min-h-screen relative overflow-hidden w-full">
+      {/* Animated gradient sky background */}
+      <div
+        className="absolute inset-0 animate-gradient-shift -z-10"
+        style={{
+          background:
+            'linear-gradient(135deg, hsl(205 65% 88%), hsl(210 40% 92%), hsl(210 55% 85%), hsl(200 50% 90%), hsl(205 65% 88%))',
+          backgroundSize: '300% 300%',
+        }}
+      />
+
+      {/* Animated clouds */}
+      <Cloud className="absolute top-[8%] w-40 opacity-70 animate-drift -z-[5]" style={{ animationDuration: '28s' }} />
+      <Cloud className="absolute top-[22%] w-56 opacity-50 animate-drift -z-[5]" style={{ animationDuration: '38s', animationDelay: '5s' }} />
+      <Cloud className="absolute top-[55%] w-32 opacity-40 animate-drift-reverse -z-[5]" style={{ animationDuration: '34s', animationDelay: '2s' }} />
+      <Cloud className="absolute top-[75%] w-48 opacity-30 animate-drift -z-[5]" style={{ animationDuration: '42s', animationDelay: '10s' }} />
+      <Cloud className="absolute top-[40%] w-36 opacity-50 animate-drift-reverse -z-[5]" style={{ animationDuration: '30s', animationDelay: '8s' }} />
+
+      {/* Sparkle particles */}
+      {[
+        { top: '12%', left: '15%', animationDuration: '3s', animationDelay: '0s' },
+        { top: '25%', left: '80%', animationDuration: '4s', animationDelay: '1s' },
+        { top: '60%', left: '10%', animationDuration: '3.5s', animationDelay: '2s' },
+        { top: '45%', left: '90%', animationDuration: '2.8s', animationDelay: '0.5s' },
+        { top: '80%', left: '70%', animationDuration: '3.2s', animationDelay: '1.5s' },
+        { top: '15%', left: '50%', animationDuration: '4.2s', animationDelay: '3s' },
+        { top: '70%', left: '35%', animationDuration: '3.8s', animationDelay: '2.5s' },
+        { top: '35%', left: '60%', animationDuration: '3s', animationDelay: '1.8s' },
+      ].map((s, i) => (
+        <SparkleDot key={i} style={s} />
+      ))}
+      
       {/* Notification Bell - Top Right */}
       <div className="absolute top-6 right-6">
         <button 
