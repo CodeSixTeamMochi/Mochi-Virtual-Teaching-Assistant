@@ -51,9 +51,9 @@ const ImageLibrary = () => {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-[1000px] mx-auto py-8 px-4 flex flex-col items-center justify-center text-sky-500 animate-pulse">
-        <BookOpen className="w-10 h-10 mb-4 opacity-50" />
-        <h2 className="text-xl font-black tracking-tight">Opening your Scrapbook...</h2>
+      <div className="w-full max-w-2xl mx-auto mt-12 py-16 px-4 flex flex-col items-center justify-center bg-white/50 backdrop-blur-sm rounded-[3rem] border-2 border-slate-100 shadow-sm animate-pulse">
+        <BookOpen className="w-12 h-12 mb-4 text-sky-400 animate-bounce" />
+        <h2 className="text-2xl font-extrabold tracking-tight text-slate-700">Opening your Scrapbook...</h2>
       </div>
     );
   }
@@ -61,13 +61,13 @@ const ImageLibrary = () => {
   // If the database returns an empty array
   if (assets.length === 0) {
     return (
-      <div className="w-full max-w-[1000px] mx-auto py-12 px-4 flex flex-col items-center justify-center text-center">
-        <div className="bg-sky-100 p-6 rounded-full mb-6">
-          <ImageIcon className="w-12 h-12 text-sky-400" />
+      <div className="w-full max-w-3xl mx-auto mt-8 py-20 px-6 flex flex-col items-center justify-center text-center bg-white border-4 border-dashed border-slate-200 rounded-[3rem] hover:border-sky-300 transition-colors duration-500">
+        <div className="bg-sky-50 p-6 rounded-full mb-6 shadow-inner">
+          <ImageIcon className="w-16 h-16 text-sky-400" />
         </div>
-        <h2 className="text-2xl font-black text-slate-800 mb-2">Your Scrapbook is empty!</h2>
-        <p className="text-slate-500 max-w-sm">
-          Go back to the Search tab, ask Mochi to find something, and click an image to save it here.
+        <h2 className="text-3xl font-extrabold text-slate-800 mb-3 tracking-tight">Your Scrapbook is empty!</h2>
+        <p className="text-slate-500 max-w-md text-lg font-medium">
+          Go back to the Search tab, ask Mochi to find something magical, and click the heart to save it here.
         </p>
       </div>
     );
@@ -75,52 +75,63 @@ const ImageLibrary = () => {
 
   return (
     /* Outer container matches the "Small" 1000px width with no side padding */
-    <div className="w-full max-w-[1000px] mx-auto py-4 px-0">
+    <div className="w-full max-w-[1200px] mx-auto py-4 px-0 animate-fade-in font-nunito">
       
       {/* HEADER */}
-      <div className="px-4 mb-6">
-        <div className="flex items-center gap-3 border-b border-sky-100 pb-4">
-          <div className="bg-sky-500/10 p-2.5 rounded-xl">
-            <BookOpen className="w-6 h-6 text-sky-600" />
+      <div className="px-4 mb-8">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b-2 border-slate-100 pb-6">
+          <div className="flex items-center gap-4">
+            <div className="bg-gradient-to-br from-sky-400 to-sky-500 p-3 rounded-2xl shadow-md shadow-sky-200/50 text-white transform -rotate-3 hover:rotate-0 transition-all duration-300">
+              <BookOpen className="w-7 h-7" />
+            </div>
+            <div>
+              <h2 className="text-2xl font-extrabold text-slate-800 tracking-tight leading-none mb-1">
+                My Mochi Scrapbook
+              </h2>
+              <p className="text-sm font-bold text-slate-400">
+                Your saved collection of learning materials
+              </p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-black text-slate-800 tracking-tight leading-none">
-              My Mochi Scrapbook
-            </h2>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mt-1">
-              {assets.length} Treasures Saved
-            </p>
+          
+          {/* Fun little pill badge for the total count */}
+          <div className="inline-flex items-center justify-center px-4 py-2 bg-sky-50 border-2 border-sky-100 rounded-full">
+            <span className="text-sm font-black text-sky-600 uppercase tracking-wider">
+              {assets.length} {assets.length === 1 ? 'Treasure' : 'Treasures'} Saved
+            </span>
           </div>
         </div>
       </div>
 
       {/* GRID: 3-per-row on large screens, matching your search layout */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 px-4 pb-10">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 px-4 pb-12">
         {assets.map((asset) => (
           <div 
             key={asset.id} 
-            className="group relative bg-white rounded-[1.5rem] p-2 shadow-sm border-[3px] border-slate-50 hover:border-sky-100 transition-all duration-300"
+            className="group relative bg-white rounded-[2rem] p-2.5 shadow-sm border-2 border-slate-100 hover:border-sky-300 hover:shadow-xl hover:shadow-sky-200/50 hover:-translate-y-1.5 transition-all duration-400 ease-out flex flex-col"
           >
             {/* The Image */}
-            <div className="aspect-[4/3] rounded-[1rem] overflow-hidden bg-slate-100">
+            <div className="relative aspect-[4/3] rounded-[1.5rem] overflow-hidden bg-slate-50 shadow-inner mb-3">
               <img 
                 src={asset.url} 
                 alt={asset.query}
-                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-110"
                 loading="lazy"
               />
+              {/* Soft overlay on hover */}
+              <div className="absolute inset-0 bg-slate-900/0 group-hover:bg-slate-900/5 transition-colors duration-300" />
             </div>
 
             {/* Info and Delete Button */}
-            <div className="mt-3 px-2 flex items-center justify-between pb-1">
-              <div className="overflow-hidden">
-                <p className="text-[11px] font-black text-sky-600 uppercase tracking-tight truncate">
+            <div className="px-3 flex items-center justify-between pb-2 flex-1">
+              <div className="overflow-hidden pr-3">
+                <p className="text-[11px] font-black text-slate-500 group-hover:text-sky-600 uppercase tracking-wider truncate transition-colors duration-300">
                   {asset.query || "Saved Image"}
                 </p>
               </div>
               
              <button 
-                className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-full transition-colors"
+                className="shrink-0 p-2 text-slate-300 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all duration-300 hover:scale-110 active:scale-90"
                 title="Remove from Scrapbook"
                 onClick={() => handleDelete(asset.url)}
               >

@@ -79,7 +79,7 @@ const VisualSearch = () => {
 
   /**
    * Sidebar Trigger
-  */
+   */
   const handlePanelGenerate = useCallback(async (queryFromPanel: string) => {
     const activeQuery = queryFromPanel || searchQuery;
     if (activeQuery.trim()) {
@@ -109,19 +109,19 @@ const VisualSearch = () => {
 // --- LIBRARY VIEW ---
   if (showLibrary) {
     return (
-      <div className="min-h-screen bg-sky-50 flex flex-col relative">
-        <div className="p-4 border-b border-border/50 bg-white flex items-center justify-between shadow-sm z-10">
+      <div className="min-h-screen bg-slate-50 flex flex-col relative font-nunito">
+        <div className="p-4 bg-white/80 backdrop-blur-md border-b-2 border-slate-100 flex items-center justify-between shadow-sm sticky top-0 z-20">
           <button
             onClick={() => setShowLibrary(false)}
-            className="p-2 rounded-full hover:bg-muted transition-colors"
+            className="p-2.5 bg-slate-50 rounded-full text-slate-500 hover:text-sky-600 hover:bg-sky-100 transition-all shadow-sm active:scale-95"
           >
-            <ArrowLeft className="w-5 h-5 text-foreground" />
+            <ArrowLeft className="w-5 h-5" />
           </button>
-          <h2 className="font-bold text-slate-800 text-lg">My Mochi Scrapbook</h2>
-          <div className="w-9" /> {/* Spacer to keep title centered */}
+          <h2 className="font-extrabold text-slate-800 text-xl tracking-tight">My Mochi Scrapbook</h2>
+          <div className="w-10" /> {/* Spacer to keep title centered properly */}
         </div>
         
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto p-4 md:p-6">
           <ImageLibrary />
         </div>
       </div>
@@ -131,30 +131,33 @@ const VisualSearch = () => {
   /// Home view with greeting
   if (!showResults) {
     return (
-      <div className="min-h-screen bg-sky-50 flex flex-col relative">
+      <div className="min-h-screen bg-gradient-to-b from-sky-50 via-white to-sky-50 flex flex-col relative font-nunito overflow-hidden">
+        
+        {/* Floating Back Button */}
         <div className="absolute top-6 left-6 z-20">
           <button 
             onClick={() => window.history.back()} 
-            className="p-2 rounded-full text-muted-foreground hover:text-foreground hover:bg-muted transition-all"
+            className="p-3 bg-white/80 backdrop-blur-sm border-2 border-slate-100 rounded-full text-slate-400 hover:text-sky-500 hover:border-sky-200 hover:bg-white shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300"
           >
             <ArrowLeft className="w-6 h-6" />
           </button>
         </div>
+
         {/* NEW LIBRARY BUTTON */}
         <div className="absolute top-6 right-6 z-20">
           <button 
             onClick={() => setShowLibrary(true)} 
-            className="flex items-center gap-2 px-4 py-2 bg-white text-sky-600 font-bold rounded-full shadow-sm hover:shadow-md hover:scale-105 transition-all"
+            className="flex items-center gap-2 px-6 py-3 bg-white text-sky-500 font-extrabold rounded-full shadow-sm border-2 border-slate-100 hover:border-sky-200 hover:shadow-lg hover:shadow-sky-200/50 hover:-translate-y-1 transition-all duration-300 active:scale-95"
           >
             <BookOpen className="w-5 h-5" /> Library
           </button>
         </div>
 
         {/* Centered content */}
-        <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20">
+        <div className="flex-1 flex flex-col items-center justify-center px-4 pb-20 mt-10">
           <MochiGreeting/>
           
-          <div className="mt-6 w-full max-w-3xl">
+          <div className="mt-8 w-full max-w-4xl">
             <VisualSearchBar
               onSearch={handleSearch}
               onGenerateWithAI={handleGenerateWithAI}
@@ -169,30 +172,33 @@ const VisualSearch = () => {
 
  // Results view with two-column layout
   return (
-    <div className="min-h-screen bg-sky-50 flex flex-col relative">
-      <div className="p-4 border-b border-border/50 flex items-center justify-between">
+    <div className="min-h-screen bg-slate-50 flex flex-col relative font-nunito">
+      
+      {/* Sticky Top Navigation */}
+      <div className="p-4 bg-white/90 backdrop-blur-md border-b-2 border-slate-100 flex items-center justify-between sticky top-0 z-20 shadow-sm">
         <button
           onClick={handleBack}
-          className="p-2 rounded-full hover:bg-muted transition-colors"
+          className="p-2.5 bg-slate-50 rounded-full text-slate-500 hover:text-sky-600 hover:bg-sky-100 transition-all shadow-sm active:scale-95"
           aria-label="Go back"
         >
-          <ArrowLeft className="w-5 h-5 text-foreground" />
+          <ArrowLeft className="w-5 h-5" />
         </button>
 
         {/* NEW LIBRARY BUTTON */}
         <button 
           onClick={() => setShowLibrary(true)} 
-          className="flex items-center gap-2 px-4 py-1.5 bg-sky-100 text-sky-600 font-bold rounded-full hover:bg-sky-200 transition-all text-sm shadow-sm"
+          className="flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-sky-400 to-sky-500 text-white font-extrabold rounded-full hover:from-sky-500 hover:to-sky-600 transition-all duration-300 shadow-md hover:shadow-lg hover:-translate-y-0.5 active:scale-95 text-sm"
         >
           <BookOpen className="w-4 h-4" /> View Library
         </button>
       </div>
 
-      <div className="flex-1 flex flex-col lg:flex-row">
+      <div className="flex-1 flex flex-col lg:flex-row max-w-[1800px] w-full mx-auto">
+        
         {/* Left column - Search and Results */}
-        <div className="flex-1 flex flex-col p-4 lg:p-6">
-          <div className="mb-4">
-            <h2 className="text-lg font-semibold text-foreground mb-3">Results</h2>
+        <div className="flex-1 flex flex-col p-4 lg:p-8">
+          <div className="mb-6">
+            <h2 className="text-xl font-extrabold text-slate-800 mb-4 pl-2 tracking-tight">Search Results</h2>
 
             <div className="max-w-3xl">
               <VisualSearchBar
@@ -205,17 +211,20 @@ const VisualSearch = () => {
               />
             </div>
           </div>
+          
           {/* Results panel */}
-          <SearchResultsPanel
-            results={searchResults}
-            isLoading={isSearching}
-            hasSearched={hasSearched}
-            onResultClick={handleResultClick}
-          />
+          <div className="flex-1 bg-white rounded-[2.5rem] p-6 shadow-sm border-2 border-slate-100">
+            <SearchResultsPanel
+              results={searchResults}
+              isLoading={isSearching}
+              hasSearched={hasSearched}
+              onResultClick={handleResultClick}
+            />
+          </div>
         </div>
 
         {/* Right column - Generate with Mochi */}
-        <div className="lg:border-l border-border/50 p-4 lg:p-6">
+        <div className="lg:w-[450px] xl:w-[500px] lg:border-l-2 border-slate-100 bg-slate-50/50 p-4 lg:p-8">
           <GenerateWithMochiPanel
             generatedContent={generatedContent}
             isGenerating={isGenerating}

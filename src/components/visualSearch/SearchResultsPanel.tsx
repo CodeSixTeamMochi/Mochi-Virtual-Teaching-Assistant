@@ -41,7 +41,7 @@ const SearchResultsPanel = ({
           <div className="space-y-1">
              <h2 className="text-2xl font-black tracking-tight text-primary animate-pulse">Looking for magic...</h2>
              <p className="text-sm text-muted-foreground italic">
-               Mochi is exploring the world for "{searchQuery}"
+               Mochi is exploring 
              </p>
           </div>
         </div>
@@ -74,7 +74,7 @@ const SearchResultsPanel = ({
         <EmptyState
           type="search"
           title="No images found"
-          description="Google couldn't find exact matches. Try simplifying your search or use Mochi to generate new content."
+          description="Couldn't find exact matches. Try simplifying your search or use Mochi to generate new content."
         />
       </div>
     );

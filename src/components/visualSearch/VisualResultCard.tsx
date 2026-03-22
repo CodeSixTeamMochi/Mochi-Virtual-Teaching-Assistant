@@ -68,7 +68,7 @@ const VisualResultCard = ({ result, onClick, searchQuery = "Mochi Discovery" }: 
   const badge = { 
     icon: Image, 
     label: 'Photo', 
-    className: 'bg-cyan-400 text-cyan-950 border-cyan-200' 
+    className: 'bg-cyan-100 text-cyan-800 border-cyan-200' // Made badge colors slightly softer/cleaner
   };
   
   const BadgeIcon = badge.icon;
@@ -76,27 +76,27 @@ const VisualResultCard = ({ result, onClick, searchQuery = "Mochi Discovery" }: 
 
   return (
     <div
-      className="bg-card border-2 border-slate-100 hover:border-primary/30 rounded-[2rem] overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1.5 transition-all duration-300 group cursor-zoom-in w-full flex flex-col relative"
+      className="bg-white border-2 border-slate-100 hover:border-sky-300 rounded-[2.5rem] overflow-hidden shadow-sm hover:shadow-2xl hover:shadow-sky-200/50 hover:-translate-y-2 transition-all duration-400 ease-out group cursor-zoom-in w-full flex flex-col relative"
       onClick={() => onClick?.(result)}
     >
       {/* THUMBNAIL CONTAINER */}
-      <div className="relative aspect-[4/3] m-1.2 bg-muted overflow-hidden rounded-[1.6rem]">
+      <div className="relative aspect-[4/3] m-2 bg-slate-50 overflow-hidden rounded-[2rem] shadow-inner">
         <img
           src={displayImage}
           alt={title}
           referrerPolicy="no-referrer"
-          className="w-full h-full object-cover object-center transition-transform duration-700 group-hover:scale-105"
+          className="w-full h-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-110"
           onError={(e) => { 
             e.currentTarget.src = "https://images.unsplash.com/photo-1591160674255-fc8b858ecf3b?w=500&auto=format&fit=crop"; 
           }} 
         />
         
         {/* Subtle Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
 
         {/* OVERLAY BADGE */}
-        <div className={`absolute top-2.5 left-2.5 px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center shadow-md border ${badge.className}`}>
-          <BadgeIcon className="w-3 h-3 mr-1.5 fill-current" />
+        <div className={`absolute top-3 left-3 px-3 py-1.5 rounded-full text-[11px] font-black uppercase flex items-center shadow-sm border backdrop-blur-sm ${badge.className}`}>
+          <BadgeIcon className="w-3.5 h-3.5 mr-1.5 fill-current" />
           {badge.label}
         </div>
 
@@ -104,26 +104,28 @@ const VisualResultCard = ({ result, onClick, searchQuery = "Mochi Discovery" }: 
         <button
           onClick={handleSaveClick}
           disabled={isSaving}
-          className="absolute top-2.5 right-2.5 p-2 bg-white/90 backdrop-blur-md rounded-full shadow-lg hover:scale-110 transition-all duration-200 z-10 active:scale-95 border border-slate-100"
+          className="absolute top-3 right-3 p-2.5 bg-white/80 hover:bg-white backdrop-blur-md rounded-full shadow-md hover:shadow-lg hover:scale-110 transition-all duration-300 z-10 active:scale-90 border border-slate-100"
           title="Save to Scrapbook"
         >
           <Heart 
-            className={`w-4 h-4 transition-colors duration-300 ${
+            className={`w-5 h-5 transition-all duration-500 ${
               isSaved 
-                ? 'fill-red-500 text-red-500 drop-shadow-sm' 
-                : 'text-slate-400 hover:text-red-400'
-            } ${isSaving ? 'animate-pulse' : ''}`} 
+                ? 'fill-rose-500 text-rose-500 scale-110 drop-shadow-sm' 
+                : 'text-slate-400 hover:text-rose-400'
+            } ${isSaving ? 'animate-bounce' : ''}`} 
           />
         </button>
       </div>
-      <div className="p-4 pt-1 flex-1 flex flex-col">
-        <div className="mt-2 flex items-center gap-2">
-          <div className="shrink-0 p-1.5 bg-slate-50 rounded-full group-hover:bg-primary/10 transition-colors">
-            <ExternalLink className="w-3 h-3 text-primary opacity-0 group-hover:opacity-100 transition-all duration-300" />
+      
+      {/* Title Area */}
+      <div className="px-5 pb-5 pt-2 flex-1 flex flex-col">
+        <div className="mt-1 flex items-center gap-3">
+          <div className="shrink-0 p-2 bg-slate-50 rounded-full group-hover:bg-sky-100 transition-colors duration-300">
+            <ExternalLink className="w-4 h-4 text-sky-500 opacity-0 group-hover:opacity-100 transition-all duration-300" />
           </div>
 
           {/* Title follows the icon */}
-          <h3 className="text-[14px] font-extrabold text-foreground line-clamp-1 group-hover:text-primary transition-colors leading-tight tracking-tight first-letter:uppercase lowercase">
+          <h3 className="text-[15px] font-extrabold text-slate-700 line-clamp-1 group-hover:text-sky-600 transition-colors duration-300 leading-tight tracking-tight first-letter:uppercase lowercase">
             {title}
           </h3>
         </div>
