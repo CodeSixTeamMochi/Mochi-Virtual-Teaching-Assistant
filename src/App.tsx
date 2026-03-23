@@ -26,7 +26,7 @@ import RemindersPage from "./pages/RemindersPage";
 import CalendarPage from "./pages/CalendarPage";
 import StudentsPage from "./pages/StudentsPage";
 import TimetablePage from "./pages/TimetablePage";
-
+import { useAuthContext } from "@asgardeo/auth-react";
 
 const queryClient = new QueryClient();
 
@@ -38,7 +38,7 @@ const App = () => (
       <BrowserRouter>
         <Routes>
           <Route path="/" element={<Index />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/login" element={<Home />} />
           <Route path="/home" element={<Home />} />
 
           <Route path="/forgot-password" element={<ForgotPassword />} />

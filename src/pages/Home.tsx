@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Bell, Image } from 'lucide-react';
+import { useAuthContext } from '@asgardeo/auth-react';
 import mochiAvatar from '@/assets/mochi-avatar-gif.gif';
 
 
@@ -9,6 +10,7 @@ import mochiAvatar from '@/assets/mochi-avatar-gif.gif';
 // 1. Verify user session/token is valid
 // 2. Fetch user-specific data and preferences
 // 3. Load personalized dashboard content
+
 
 /* ☁️ Cloud component */
 const Cloud = ({ className, style }: { className?: string; style?: React.CSSProperties }) => (
@@ -31,17 +33,56 @@ const SparkleDot = ({ style }: { style: React.CSSProperties }) => (
   />
 );
 
-const Home = () => {
+//const Home = () => {
+ // const navigate = useNavigate();
+
+  //useEffect(() => {
+    // Check if user is authenticated
+  //  const isAuthenticated = localStorage.getItem('isAuthenticated');
+  //  if (!isAuthenticated) {
+   //   navigate('/login');
+   // }
+ // }, [navigate]);
+
+ const Home = () => {
   const navigate = useNavigate();
+  const { state, getIDToken, signIn } = useAuthContext();
+  const [userProfile, setUserProfile] = useState<any>(null);
 
   useEffect(() => {
-    // Check if user is authenticated
-    const isAuthenticated = localStorage.getItem('isAuthenticated');
-    if (!isAuthenticated) {
-      navigate('/login');
+    if (!state.isLoading && !state.isAuthenticated) {
+      signIn(); 
     }
-  }, [navigate]);
+  }, [state.isLoading, state.isAuthenticated, signIn]);
 
+  useEffect(() => {
+    const syncUser = async () => {
+      if (state.isAuthenticated) {
+        try {
+          const token = await getIDToken();
+          const response = await fetch("http://localhost:5000/api/auth/sync", {
+            method: "POST",
+            headers: { 
+              "Content-Type": "application/json",
+              "Authorization": `Bearer ${token}` 
+            },
+            body: JSON.stringify({
+               asgardeo_id: state.sub,
+               email: state.email,
+               first_name: state.displayName?.split(' ')[0] || "Mochi Guest", // Safe naming
+            })
+          });
+          const data = await response.json();
+          setUserProfile(data);
+        } catch (err) {
+          console.error("Sync Error:", err);
+        }
+      }
+    };
+    syncUser();
+  }, [state.isAuthenticated, getIDToken, state.sub, state.email, state.displayName]);
+
+  
   const features = [
     { id: 'visual-search', name: 'Visual Search', icon: Image },
     { id: 'Lessons', name: 'Lessons', icon: Image },

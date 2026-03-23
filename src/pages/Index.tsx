@@ -1,70 +1,9 @@
-// import { Link } from 'react-router-dom';
-// import { LogIn, Sparkles } from 'lucide-react';
-// import mochiMascot from '@/assets/mochi-mascot.jpeg';
-
-
-// const Index = () => {
-//   return (
-//     <div className="min-h-screen bg-background flex flex-col items-center justify-center p-6">
-//       {/* Hero Section */}
-//       <div className="text-center max-w-2xl">
-//         {/* Mascot */}
-//         <img 
-//           src={mochiMascot} 
-//           alt="Mochi - Virtual Teaching Assistant" 
-//           className="w-48 h-48 md:w-64 md:h-64 object-contain mx-auto animate-float drop-shadow-2xl mb-8"
-//         />
-        
-//         {/* Title */}
-//         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
-//           Welcome to <span className="text-primary">Mochi</span>
-//         </h1>
-        
-//         {/* Subtitle */}
-//         <p className="text-lg text-muted-foreground mb-8 max-w-md mx-auto">
-//           Your Virtual Teaching Assistant for Early Childhood Education. 
-//           Empowering teachers with AI-powered lesson planning and student support.
-//         </p>
-
-//         {/* Feature highlights */}
-//         <div className="flex flex-wrap justify-center gap-3 mb-10">
-//           <span className="inline-flex items-center gap-1 px-4 py-2 bg-secondary rounded-full text-sm text-foreground">
-//             <Sparkles size={16} className="text-primary" />
-//             AI-Powered
-//           </span>
-//           <span className="inline-flex items-center gap-1 px-4 py-2 bg-secondary rounded-full text-sm text-foreground">
-//             <Sparkles size={16} className="text-primary" />
-//             Lesson Planning
-//           </span>
-//           <span className="inline-flex items-center gap-1 px-4 py-2 bg-secondary rounded-full text-sm text-foreground">
-//             <Sparkles size={16} className="text-primary" />
-//             Student Tracking
-//           </span>
-//         </div>
-
-//         {/* CTA Button - Login only */}
-//         <div className="flex justify-center">
-//           <Link to="/login" className="login-button text-lg">
-//             <LogIn size={22} />
-//             Teacher Login
-//           </Link>
-//         </div>
-//       </div>
-
-//       {/* Footer note */}
-//       <p className="absolute bottom-6 text-sm text-muted-foreground">
-//         Virtual Teaching Assistant for Early Childhood Education Centres
-//       </p>
-//     </div>
-//   );
-// };
-
-// export default Index;
-
-import { Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LogIn, Sparkles, BookOpen, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useAuthContext } from "@asgardeo/auth-react"; // 1. Added Asgardeo hook
 import mochiGif from '@/assets/mochi-avatar-gif.gif';
 
 /* ☁️ Cloud component */
@@ -89,6 +28,21 @@ const SparkleDot = ({ style }: { style: React.CSSProperties }) => (
 );
 
 const Index = () => {
+  const navigate = useNavigate();
+  const { state, signIn } = useAuthContext(); // 2. Destructure tools
+
+  // 3. AUTO-REDIRECT: If they are already logged in, don't show the landing page
+  useEffect(() => {
+    if (state.isAuthenticated) {
+      navigate('/home');
+    }
+  }, [state.isAuthenticated, navigate]);
+
+  const handleLoginClick = () => {
+    // 🚀 THE BYPASS: Directly calls Asgardeo instead of navigating to /login
+    signIn(); 
+  };
+
   return (
     <div className="relative min-h-screen overflow-hidden flex flex-col items-center justify-center">
       {/* Animated gradient sky background */}
@@ -124,12 +78,10 @@ const Index = () => {
 
       {/* Hero content */}
       <main className="relative z-10 flex flex-col items-center gap-6 px-4 py-12 max-w-lg text-center">
-        {/* Mascot placeholder — replace src with your GIF when ready */}
         <div className="animate-gentle-pulse rounded-full p-2">
-            <img src={mochiGif} alt="Mochi mascot" className="w-100 h-100 rounded-full object-cover" />         
+            <img src={mochiGif} alt="Mochi mascot" className="w-64 h-64 rounded-full object-cover" />         
         </div>
 
-        {/* Title */}
         <h1
           className="text-4xl md:text-5xl font-extrabold tracking-tight"
           style={{ textShadow: '0 2px 12px hsl(330 60% 85% / 0.5)' }}
@@ -137,13 +89,11 @@ const Index = () => {
           Welcome to <span className="text-primary">Mochi</span>
         </h1>
 
-        {/* Subtitle */}
         <p className="text-muted-foreground text-lg leading-relaxed max-w-md">
           Your Virtual Teaching Assistant for Early Childhood Education.
           Empowering teachers with AI-powered lesson planning and student support.
         </p>
 
-        {/* Feature badges */}
         <div className="flex flex-wrap justify-center gap-3">
           <Badge variant="secondary" className="gap-1.5 px-3 py-1.5 text-sm rounded-full">
             <Sparkles className="w-3.5 h-3.5" /> AI-Powered
@@ -156,19 +106,18 @@ const Index = () => {
           </Badge>
         </div>
 
-        {/* Login button */}
-        <Link to="/login">
-          <Button
-            size="lg"
-            className="rounded-full px-8 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
-          >
-            <LogIn className="w-5 h-5 mr-1" />
-            Teacher Login
-          </Button>
-        </Link>
+        {/* 4. UPDATED LOGIN BUTTON: Removed Link, Added onClick handler */}
+        <Button
+          size="lg"
+          onClick={handleLoginClick}
+          disabled={state.isLoading}
+          className="rounded-full px-8 text-base font-bold shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105"
+        >
+          <LogIn className="w-5 h-5 mr-1" />
+          {state.isLoading ? 'Connecting...' : 'Teacher Login'}
+        </Button>
       </main>
 
-      {/* Footer */}
       <footer className="absolute bottom-6 text-sm text-muted-foreground/70">
         Virtual Teaching Assistant for Early Childhood Education Centres
       </footer>

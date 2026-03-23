@@ -153,7 +153,7 @@ const handleSaveEdit = async (id: number) => {
   }
 };
 
-  const handleLogout = () => navigate('/login');
+  const handleLogout = () => navigate('/Index.tsx');
   const scrollToComms = () => document.getElementById('parent-comms')?.scrollIntoView({ behavior: 'smooth' });
 
   if (isLoading) {

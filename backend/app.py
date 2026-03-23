@@ -17,7 +17,7 @@ from db import get_db_connection, release_db_connection
 from reinforcedLearningBackend import rl_bp
 
 # Dashboard & Core Student Management
-from routes.routes import dashboard_bp
+from routes.routes import dashboard_bp, auth_bp
 from routes.emergency_contacts import emergency_contacts_bp
 from routes.medications import medications_bp
 from routes.students import students_bp
@@ -67,6 +67,7 @@ def create_app():
     app.register_blueprint(visual_search_bp, url_prefix='/api')
     
     # Register Core Routes
+    app.register_blueprint(auth_bp)
     app.register_blueprint(dashboard_bp)
     app.register_blueprint(emergency_contacts_bp)
     app.register_blueprint(medications_bp)

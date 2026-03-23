@@ -4,8 +4,10 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 from datetime import datetime
 from db import release_db_connection
+from auth_middleware import token_required
 
 dashboard_bp = Blueprint('dashboard', __name__)
+auth_bp = Blueprint('auth_bp', __name__)
 
 # ==========================================
 # 1. DASHBOARD STATS
@@ -333,4 +335,108 @@ def update_delete_note(id):
         return jsonify({"error": str(e)}), 500
     finally:
         if conn:
-            release_db_connection(conn) 
+            release_db_connection(conn)
+
+@auth_bp.route('/api/auth/sync', methods=['POST'])
+def sync_user():
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    try:
+        user_data = request.json
+        asgardeo_id = user_data.get('asgardeo_id')
+        email = user_data.get('email')
+        first_name = user_data.get('first_name')
+        last_name = user_data.get('last_name')
+        role = user_data.get('role') 
+
+        if not asgardeo_id or not email:
+            return jsonify({"error": "Missing required data"}), 400
+
+        # Check if user already exists
+        cursor.execute("SELECT role FROM users WHERE asgardeo_id = %s", (asgardeo_id,))
+        existing_user = cursor.fetchone()
+
+        if existing_user:
+            return jsonify({"message": "User exists", "role": existing_user[0]}), 200
+
+        if not role:
+            return jsonify({"message": "Role required", "needs_role": True}), 200
+
+        # --- ATOMIC TRANSACTION START ---
+        # 1. Create User
+        cursor.execute("""
+            INSERT INTO users (asgardeo_id, email, first_name, last_name, role)
+            VALUES (%s, %s, %s, %s, %s) RETURNING user_id
+        """, (asgardeo_id, email, first_name, last_name, role))
+        
+        new_user_id = cursor.fetchone()[0]
+
+        # 2. Automatically Link Teacher Table
+        if role.lower() == 'teacher':
+            cursor.execute("""
+                INSERT INTO teachers (teacher_id, user_id, full_name)
+                VALUES (%s, %s, %s)
+            """, (new_user_id, new_user_id, f"{first_name} {last_name}"))
+
+        conn.commit() # Save everything at once
+        return jsonify({"message": "Success", "role": role}), 200
+
+    except Exception as e:
+        conn.rollback() # If anything fails, undo changes to keep DB clean
+        print(f"Sync Error: {e}")
+        return jsonify({"error": "Database error"}), 500
+    finally:
+        cursor.close()
+        conn.close()
+
+@auth_bp.route('/api/dashboard/teacher-stats', methods=['GET'])
+@token_required 
+def get_teacher_stats(current_user):
+    # 'current_user' is the decoded token passed from your middleware
+    conn = None
+    try:
+        asgardeo_id = current_user.get('sub') 
+        
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # 1. Fetch User Identity
+        cursor.execute("""
+            SELECT user_id, first_name, role 
+            FROM users 
+            WHERE asgardeo_id = %s
+        """, (asgardeo_id,))
+        
+        user_row = cursor.fetchone()
+        
+        if not user_row:
+            return jsonify({"error": "User identity not found in database"}), 404
+            
+        u_id, f_name, u_role = user_row
+
+        # 2. Fetch Student Count (Using your exact Neon schema)
+        # We join through teachers -> classrooms -> students
+        cursor.execute("""
+            SELECT COUNT(s.student_id) 
+            FROM teachers t
+            LEFT JOIN classrooms c ON t.teacher_id = c.teacher_id 
+            LEFT JOIN students s ON c.classroom_id = s.classroom_id
+            WHERE t.user_id = %s
+        """, (u_id,))
+        
+        student_count = cursor.fetchone()[0]
+        
+        return jsonify({
+            "first_name": f_name,
+            "role": u_role,
+            "total_students": student_count or 0
+        }), 200
+
+    except Exception as e:
+        # This will print the error to your terminal if something fails
+        print(f"🚨 Stats Route Crash: {str(e)}")
+        return jsonify({"error": "Internal Server Error", "details": str(e)}), 500
+    finally:
+        if conn:
+            cursor.close()
+            conn.close() 

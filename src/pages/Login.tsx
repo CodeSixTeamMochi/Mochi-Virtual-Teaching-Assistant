@@ -1,89 +1,27 @@
-import { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { LogIn, Eye, EyeOff } from 'lucide-react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { LogIn } from 'lucide-react';
+import { useAuthContext } from "@asgardeo/auth-react";
 import mochiMascot from '@/assets/mochi-avatar-gif.gif';
 import teacherAvatar from '@/assets/teacher-avatar.png';
 
-// TODO: Database Integration
-// When connecting to PostgreSQL database:
-// 1. Import your database client (e.g., psycopg2 adapter via API)
-// 2. Create a login API endpoint that validates credentials
-// 3. Replace the mock authentication below with actual API call
-// 4. Store session/JWT token for authenticated requests
-
-interface LoginFormData {
-  username: string;
-  password: string;
-}
-
 const Login = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState<LoginFormData>({
-    username: '',
-    password: '',
-  });
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const { state, signIn } = useAuthContext();
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    setError(null);
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError(null);
-
-    // Input validation
-    if (!formData.username.trim()) {
-      setError('Please enter your username');
-      setIsLoading(false);
-      return;
-    }
-    if (!formData.password.trim()) {
-      setError('Please enter your password');
-      setIsLoading(false);
-      return;
-    }
-
-    // TODO: Replace with actual database authentication
-    // Example API call structure:
-    // try {
-    //   const response = await fetch('/api/auth/login', {
-    //     method: 'POST',
-    //     headers: { 'Content-Type': 'application/json' },
-    //     body: JSON.stringify({
-    //       username: formData.username,
-    //       password: formData.password
-    //     })
-    //   });
-    //   const data = await response.json();
-    //   if (data.success) {
-    //     localStorage.setItem('authToken', data.token);
-    //     localStorage.setItem('user', JSON.stringify(data.user));
-    //     navigate('/dashboard');
-    //   } else {
-    //     setError(data.message || 'Invalid credentials');
-    //   }
-    // } catch (err) {
-    //   setError('Connection error. Please try again.');
-    // }
-
-    // Mock authentication for demo (remove when database is connected)
-    setTimeout(() => {
-      // Simulating successful login
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', JSON.stringify({
-        username: formData.username,
-        role: 'teacher',
-        name: 'Teacher'
-      }));
-      setIsLoading(false);
+  // 🛡️ SECURITY CHECK: 
+  // If the user is already logged in and somehow lands here, send them Home immediately.
+  useEffect(() => {
+    if (state.isAuthenticated) {
       navigate('/home');
-    }, 800);
+    }
+  }, [state.isAuthenticated, navigate]);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    // 🚀 THE BYPASS: 
+    // This ignores the username/password fields and opens the Asgardeo Login.
+    signIn();
   };
 
   return (
@@ -93,7 +31,7 @@ const Login = () => {
         <div className="text-center">
           <img 
             src={mochiMascot} 
-            alt="Mochi - Virtual Teaching Assistant" 
+            alt="Mochi Mascot" 
             className="w-80 h-80 object-contain mx-auto animate-float drop-shadow-2xl"
           />
           <h1 className="mt-8 text-4xl font-bold text-foreground tracking-wide">
@@ -117,79 +55,39 @@ const Login = () => {
           {/* Title */}
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-foreground">Teacher Login</h2>
-            <p className="text-muted-foreground mt-1">Welcome back to Mochi!</p>
+            <p className="text-muted-foreground mt-1">Access your secure Mochi portal</p>
           </div>
 
-          {/* Error message */}
-          {error && (
-            <div className="mb-4 p-3 rounded-xl bg-destructive/10 text-destructive text-sm text-center">
-              {error}
-            </div>
-          )}
+          <div className="bg-primary/5 p-4 rounded-xl border border-primary/10 mb-8 text-center">
+            <p className="text-sm text-muted-foreground italic">
+              "Click below to sign in using your secure team credentials."
+            </p>
+          </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-5">
-            {/* Username field */}
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-2 uppercase tracking-wide">
-                Username
-              </label>
-              <input
-                type="text"
-                name="username"
-                value={formData.username}
-                onChange={handleInputChange}
-                placeholder="#samplename"
-                className="login-input"
-                disabled={isLoading}
-              />
-            </div>
-
-            {/* Password field */}
-            <div>
-              <label className="block text-sm font-semibold text-foreground mb-2 uppercase tracking-wide">
-                Password
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  name="password"
-                  value={formData.password}
-                  onChange={handleInputChange}
-                  placeholder="#samplepassword"
-                  className="login-input pr-12"
-                  disabled={isLoading}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                </button>
-              </div>
-            </div>
-
-            {/* Forgot password link */}
-            <div className="text-right">
-              <Link to="/forgot-password" className="login-link text-sm">
-                Forgot Password ?
-              </Link>
-            </div>
-
-            {/* Login button */}
+            {/* NOTE: We keep the button inside a form so it feels natural, 
+               but we removed the username/password inputs because 
+               Asgardeo handles those on its own secure page. 
+            */}
+            
             <div className="flex justify-center pt-2">
               <button
                 type="submit"
-                className="login-button"
-                disabled={isLoading}
+                className="login-button w-full flex items-center justify-center gap-2"
+                disabled={state.isLoading}
               >
                 <LogIn size={20} />
-                {isLoading ? 'Logging in...' : 'Login'}
+                {state.isLoading ? 'Connecting...' : 'Sign In with Asgardeo'}
               </button>
             </div>
           </form>
 
+          <div className="mt-8 text-center">
+            <p className="text-xs text-muted-foreground uppercase tracking-widest">
+              Powered by Asgardeo Cloud Security
+            </p>
+          </div>
         </div>
       </div>
     </div>
