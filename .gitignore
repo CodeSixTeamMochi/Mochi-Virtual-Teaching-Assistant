@@ -17,15 +17,28 @@ dist-ssr
 !.vscode/extensions.json
 .idea
 .DS_Store
+__pycache__/
+.venv/
+*.env
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+package-lock.jsonpackage-lock.json
 
 .env
 backend/.env
-venv/
 backend/venv/
 backend/__pycache__/
-backend/revisionGamesBackend/__pycache__/
+.env
+
+
+{{
+    "title": "Learn About {topic}",
+    "description": "A fun lesson about {topic} for young learners.",
+    "items": [
+        {{"name": "item name", "spokenText": "Simple, engaging text about this item (1-2 sentences)"}}
+    ]
+}}
+Backend/.env

@@ -4,6 +4,8 @@
 @tailwind components;
 @tailwind utilities;
 
+
+
 /* Mochi Teacher Dashboard Design System - Soft, Friendly, Child-Education Aesthetic */
 
 @layer base {
@@ -46,6 +48,11 @@
     --warning: 0 70% 60%;
     --warning-foreground: 0 0% 100%;
 
+    /* Notification Bell - Yellow */
+    --notification: 40 95% 55%;
+    --notification-foreground: 30 50% 15%;
+
+
     /* Info - Light Blue Card Background */
     --info: 195 60% 92%;
     --info-foreground: 195 70% 35%;
@@ -63,6 +70,14 @@
     --ring: 195 70% 50%;
 
     --radius: 1rem;
+
+    /* Emergency*/
+    --emergency: 350 85% 60%;
+    --emergency-foreground: 0 0% 100%;
+    --health: 350 70% 55%;
+    --health-foreground: 0 0% 100%;
+    --call: 200 80% 55%;
+    --call-foreground: 0 0% 100%;
 
     /* Login specific colors */
     --login-bg: 200 20% 96%;
@@ -149,7 +164,9 @@
 
   body {
     @apply bg-background text-foreground;
-    font-family: 'Nunito', sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
@@ -186,15 +203,16 @@
   }
 
   /* Feature card styles for homepage */
-  .feature-card {
-    @apply bg-card rounded-2xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 cursor-pointer;
-    box-shadow: 0 4px 20px -4px hsl(220 20% 50% / 0.1);
-  }
+/* Feature card styles for homepage */
+.feature-card {
+  @apply bg-card rounded-2xl p-6 flex flex-col items-center justify-center gap-3 transition-all duration-200 cursor-pointer;
+  box-shadow: 0 4px 20px -4px hsl(220 20% 50% / 0.1);
+}
 
-  .feature-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px -4px hsl(220 20% 50% / 0.15);
-  }
+.feature-card:hover {
+  @apply -translate-y-1;
+  box-shadow: 0 8px 30px -4px hsl(220 20% 50% / 0.15);
+}
 
   .feature-icon {
     @apply w-12 h-12 rounded-xl flex items-center justify-center;
@@ -208,11 +226,81 @@
     background: hsl(var(--warning));
     color: hsl(var(--warning-foreground));
   }
+
+  .notification-bell-yellow {
+    @apply w-12 h-12 rounded-xl flex items-center justify-center;
+    background: hsl(var(--notification));
+    color: hsl(var(--notification-foreground));
+  }
+  
+  /* ===== Mochi Visual Search Components ===== */
+  .mochi-card {
+    @apply bg-card rounded-2xl shadow-[0_8px_30px_-8px_hsl(220_20%_50%_/_0.15)] border-0;
+  }
+
+  .mochi-button-primary {
+    @apply bg-primary text-primary-foreground font-semibold rounded-xl px-6 py-3 
+           transition-all duration-200
+           hover:brightness-105 hover:shadow-lg active:scale-[0.98];
+  }
+
+  .mochi-button-accent {
+    @apply font-semibold rounded-xl px-6 py-3 
+           transition-all duration-200
+           hover:brightness-105 hover:shadow-lg active:scale-[0.98];
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+
+  .mochi-input {
+    @apply bg-card border-0 rounded-full px-5 py-4 text-foreground 
+           placeholder:text-muted-foreground
+           focus:ring-2 focus:ring-primary/30 transition-all;
+  }
+
+  .mochi-result-card {
+    @apply bg-card rounded-2xl overflow-hidden
+           transition-all duration-200 hover:shadow-xl
+           hover:-translate-y-1 cursor-pointer;
+  }
+
+  .mochi-skeleton {
+    @apply bg-gradient-to-r from-muted via-muted/50 to-muted 
+           animate-pulse rounded-xl;
+  }
+
+  .mochi-badge {
+    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+  }
+
+  .mochi-badge-image {
+    background: hsl(195 60% 92%);
+    color: hsl(var(--foreground));
+  }
+
+  .mochi-badge-video {
+    background: hsl(195 60% 92%);
+    color: hsl(var(--foreground));
+  }
+
+  .mochi-badge-animation {
+    background: hsl(195 60% 92%);
+    color: hsl(var(--foreground));
+  }
+
 }
 
 @layer utilities {
+  .font-inter {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  
   .font-nunito {
     font-family: 'Nunito', sans-serif;
+  }
+    .text-balance {
+    text-wrap: balance;
+  
   }
 
   @keyframes float {
@@ -224,7 +312,50 @@
     }
   }
 
+  @keyframes bounce-gentle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
   .animate-float {
     animation: float 3s ease-in-out infinite;
+  }
+
+  @keyframes drift {
+    0% { transform: translateX(-20vw); }
+    100% { transform: translateX(110vw); }
+  }
+
+  @keyframes drift-reverse {
+    0% { transform: translateX(110vw); }
+    100% { transform: translateX(-20vw); }
+  }
+
+  .animate-drift {
+    animation: drift linear infinite;
+  }
+
+  .animate-drift-reverse {
+    animation: drift-reverse linear infinite;
+  }
+
+  @keyframes sparkle {
+    0%, 100% { opacity: 0; transform: scale(0.5); }
+    50% { opacity: 1; transform: scale(1); }
+  }
+
+  .animate-sparkle {
+    animation: sparkle 2.5s ease-in-out infinite;
+  }
+
+  @keyframes gradient-shift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  .animate-gradient-shift {
+    background-size: 300% 300%;
+    animation: gradient-shift 18s ease infinite;
   }
 }

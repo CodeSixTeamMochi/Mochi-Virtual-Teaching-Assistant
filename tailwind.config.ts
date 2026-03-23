@@ -14,7 +14,7 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ['Nunito', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'Segoe UI', 'sans-serif'],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -50,6 +50,37 @@ export default {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },  
+        emergency: {
+          DEFAULT: "hsl(var(--emergency))",
+          foreground: "hsl(var(--emergency-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
+        },
+        mochi: "hsl(var(--card-mochi))",
+        "stats-green": "hsl(var(--card-stats-green))",
+        "stats-yellow": "hsl(var(--card-stats-yellow))",
+        notification: {
+          DEFAULT: "hsl(var(--notification))",
+          foreground: "hsl(var(--notification-foreground))",
+        },      
+        health: {
+          DEFAULT: "hsl(var(--health))",
+          foreground: "hsl(var(--health-foreground))",
+        },
+        call: {
+          DEFAULT: "hsl(var(--call))",
+          foreground: "hsl(var(--call-foreground))",
+        },
         login: {
           bg: "hsl(var(--login-bg))",
           card: "hsl(var(--login-card))",
@@ -84,12 +115,22 @@ export default {
           to: { height: "0" },
         },
         "float": {
-          "0%, 100%": { transform: "translateY(0)" },
-          "50%": { transform: "translateY(-10px)" },
+          "0%, 100%": { 
+            transform: "translateY(0) scale(1)",
+            filter: "drop-shadow(0 5px 15px rgba(0,0,0,0.1))" 
+          },
+          "50%": { 
+            transform: "translateY(-15px) scale(1.02)",
+            filter: "drop-shadow(0 20px 25px rgba(0,0,0,0.05))"
+          },
         },
         "pulse-soft": {
           "0%, 100%": { opacity: "1" },
           "50%": { opacity: "0.8" },
+        },
+        "slide-in-from-bottom": {
+          "0%": { transform: "translateY(100%)", opacity: "0" },
+          "100%": { transform: "translateY(0)", opacity: "1" },
         },
       },
       animation: {
@@ -97,6 +138,7 @@ export default {
         "accordion-up": "accordion-up 0.2s ease-out",
         "float": "float 3s ease-in-out infinite",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
+        "slide-in-from-bottom-5": "slide-in-from-bottom 0.3s ease-out",
       },
     },
   },
