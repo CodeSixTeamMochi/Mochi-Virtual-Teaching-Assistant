@@ -21,8 +21,6 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
-
-// Retained import for offline fallback
 import localforage from "localforage";
 
 type TemplateMode = "select" | "ai" | "custom";
@@ -117,9 +115,12 @@ const CreateActivity = () => {
     }
   };
 
-  // 2. Handle Final Save to Neon Cloud Database
-  const handleSave = async () => {
+  // 2. Handle Final Save using LocalForage
+  const handleSave = async (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevents any weird form refresh behaviors
+    
     try {
+      console.log("Attempting to save game...");
       const title = questions[0].gameTitle || gameTopic || "Custom Game";
       
       const formattedQuestions = questions.map((q, index) => ({
@@ -133,36 +134,31 @@ const CreateActivity = () => {
         }))
       }));
 
-      // ACTIVE LOGIC: NEON CLOUD DATABASE 
-      const payload = {
-        teacher_id: 1, // Hardcoded until WSO2 is fully linked
-        title: title,  // Matches 'title' column in DB
-        instructions: description || "Interactive Revision Game", // Matches 'instructions' column
-        image_urls: formattedQuestions // Storing the full game structure in the JSONB column
+      const newCustomGame = {
+        id: Date.now().toString(),
+        name: title,
+        description: description || "Interactive Revision Game",
+        questionCount: formattedQuestions.length,
+        questions: formattedQuestions,
+        createdAt: new Date().toISOString()
       };
 
-      console.log("Sending payload:", payload);
+      // Pull existing games from IndexedDB
+      const existingGames: any = (await localforage.getItem("created_games")) || [];
+      
+      // Save the new array back to IndexedDB
+      await localforage.setItem("created_games", [newCustomGame, ...existingGames]);
 
-      const response = await fetch("http://localhost:5000/api/revision/activities", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(payload),
-      });
+      console.log("Successfully saved to LocalForage!");
+      
+      // NOTE: If this fails to navigate, check your App.tsx. 
+      // If your route is actually lowercase, change this to "/revision-games"
+      navigate("/RevisionGames"); 
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Server returned ${response.status}: ${errorText}`);
-      }
-
-      const data = await response.json();
-      console.log("Success! Game saved to Neon DB with ID:", data.game?.game_id);
-      navigate("/revision-games"); 
-
-    } catch (error) {
-      console.error("Save Error:", error);
-      alert("Network error or Server error. Check your backend console!");
+    } catch (error: any) {
+      console.error("Error saving game:", error);
+      // This will pop up if the images are literally too big for the browser to process
+      alert(`Failed to save: ${error.message || "Unknown Error"}`);
     }
   };
 
@@ -200,7 +196,7 @@ const CreateActivity = () => {
 
   return (
     <div className="min-h-screen bg-background p-6">
-      {/* HEADER (Only visible after mode selection) */}
+      {/* HEADER */}
       {mode === "custom" && (
         <>
           <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 mb-6">
@@ -295,12 +291,11 @@ const CreateActivity = () => {
         </DialogContent>
       </Dialog>
 
-      {/* EDITOR UI (Visible after AI or Custom selection) */}
+      {/* EDITOR UI */}
       <AnimatePresence mode="wait">
         {mode === "custom" && (
           <motion.div key="custom-mode" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
             <div className="bg-card rounded-3xl shadow-soft overflow-hidden">
-              {/* Question Navigation Header */}
               <div className="flex items-center justify-between px-6 py-4 border-b border-border">
                 <Button variant="ghost" onClick={() => navigate("/RevisionGames")} className="text-muted-foreground hover:text-destructive font-semibold">
                   <X className="w-5 h-5 mr-2" /> Cancel
@@ -320,7 +315,6 @@ const CreateActivity = () => {
                 </Button>
               </div>
 
-              {/* Editable Fields */}
               <div className="p-8 max-w-3xl mx-auto">
                 <div className="mb-6">
                   <label className="block text-sm font-medium text-muted-foreground mb-2">Game Title</label>
@@ -331,7 +325,6 @@ const CreateActivity = () => {
                   <Textarea value={currentQuestion.questionText} onChange={(e) => updateCurrentQuestion({ questionText: e.target.value })} className="rounded-xl min-h-[60px]" />
                 </div>
 
-                {/* Question Cards (Options) */}
                 <div className="grid grid-cols-3 gap-6 mb-8">
                   {currentQuestion.options.map((option, index) => {
                     const isCorrect = currentQuestion.correctOptionIndex === index;
@@ -372,7 +365,6 @@ const CreateActivity = () => {
                   })}
                 </div>
 
-                {/* Footer Controls */}
                 <div className="flex justify-center gap-4">
                   <Button onClick={() => setQuestions(prev => [...prev, { gameTitle: currentQuestion.gameTitle, questionText: "", options: [{ image: null, label: "" }, { image: null, label: "" }, { image: null, label: "" }], correctOptionIndex: 0 }])} className="rounded-full px-8 py-3 bg-secondary text-secondary-foreground hover:bg-secondary/80 gap-2">
                     <Plus className="w-5 h-5" /> Add Question
