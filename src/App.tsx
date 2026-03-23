@@ -8,6 +8,9 @@ import Login from "./pages/Login";
 import ForgotPassword from "./pages/ForgotPassword";
 import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
+import RevisionGames from "./pages/RevisionGames";
+import CreateActivity from "./pages/CreateActivity";
+import GamePage from "./pages/GamePage";
 import HealthData from "./pages/HealthData";
 import VisualSearch from "./pages/VisualSearch";
 import LessonPlaneHome from "./pages/LessonPlaneHome";
@@ -42,6 +45,9 @@ const App = () => (
           <Route path="/home" element={<Home />} />
 
           <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/revision-games" element={<RevisionGames />} />
+          <Route path="/create-activity" element={<CreateActivity />} />
+          <Route path="/game/:categoryId" element={<GamePage />} />
 
           <Route path="/dashboard" element={<TeacherDashboard />} />
           <Route path="/forgot-password" element={<ForgotPassword />} />

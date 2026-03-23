@@ -1,6 +1,6 @@
 """
 Main Flask Application for Mochi
-Unified entry point for all team blueprints.
+Unified entry point for all team blueprints, including Revision Games.
 """
 
 import os
@@ -11,31 +11,35 @@ from dotenv import load_dotenv
 # Database
 from db import get_db_connection, release_db_connection
 
+# ---------------------------------------------------------
 # Import Team Blueprints 
+# ---------------------------------------------------------
 
-# Reinforced Learning Feature
-from reinforcedLearningBackend import rl_bp
-
-# Dashboard & Core Student Management
+# 1. Dashboard & Core Student Management
 from routes.routes import dashboard_bp, auth_bp
 from routes.emergency_contacts import emergency_contacts_bp
 from routes.medications import medications_bp
 from routes.students import students_bp
-from routes.classrooms import classrooms_bp  # <-- Added this import to fix a missing variable in the original file
+from routes.classrooms import classrooms_bp  
 
-# Visual Search Feature
+# 2. Reinforced Learning Feature
+from reinforcedLearningBackend import rl_bp
+
+# 3. Visual Search Feature
 from visualSearchBackend.services.config import get_config
 from visualSearchBackend.services.gemini_service import init_gemini
 from visualSearchBackend.routes import api_bp as visual_search_bp
 
-# Lesson Plans Feature
+# 4. Lesson Plans Feature
 from lessonPlanBackend import lessons_bp
+
+# 5. Revision Games Feature (Your Branch!)
+from revisionGamesBackend.routes import revision_games_bp
 
 # Load environment variables
 load_dotenv()
 
 def create_app():
-    
     app = Flask(__name__)
 
     try:
@@ -45,7 +49,7 @@ def create_app():
     except Exception as e:
         print(f"Warning: Could not load Visual Search config: {e}")
 
-    # Permissive CORS to handle React/Vite from any localhost port
+    # Permissive CORS to handle React/Vite from any localhost port for the whole team
     CORS(app, resources={r"/*": {"origins": "*"}},
          supports_credentials=True,
          methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
@@ -58,13 +62,9 @@ def create_app():
         except Exception as e:
             print(f"Error initializing Visual Search Gemini: {e}")
 
+    # ---------------------------------------------------------
     # Register All Blueprints 
-    
-    # Register Reinforced Learning Feature
-    app.register_blueprint(rl_bp, url_prefix='/api')
-    
-    # Register Visual Search
-    app.register_blueprint(visual_search_bp, url_prefix='/api')
+    # ---------------------------------------------------------
     
     # Register Core Routes
     app.register_blueprint(auth_bp)
@@ -74,13 +74,29 @@ def create_app():
     app.register_blueprint(students_bp)
     app.register_blueprint(classrooms_bp)
     
+    # Register Reinforced Learning
+    app.register_blueprint(rl_bp, url_prefix='/api')
+    
+    # Register Visual Search
+    app.register_blueprint(visual_search_bp, url_prefix='/api')
+    
     # Register Lesson Plans
     app.register_blueprint(lessons_bp)
 
-    # Base Health Check Routes 
+    # Register Revision Games
+    app.register_blueprint(revision_games_bp, url_prefix="/api/revision")
+
+    # ---------------------------------------------------------
+    # Health Checks & Base Routes
+    # ---------------------------------------------------------
+
     @app.route('/')
     def home():
         return jsonify({"message": "Mochi Backend is Running with ALL team features!"})
+
+    @app.route("/api/health", methods=["GET"])
+    def health():
+        return jsonify({"status": "ok", "service": "mochi-backend-unified"})
 
     @app.route('/api/test-db')
     def test_db():
@@ -102,7 +118,6 @@ def create_app():
                 release_db_connection(conn)
 
     return app
-
 
 if __name__ == '__main__':
     app = create_app()

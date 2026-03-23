@@ -40,6 +40,10 @@
     --success: 145 60% 45%;
     --success-foreground: 0 0% 100%;
 
+    /* Play hover - sky-500 */
+    --play-hover:195 70% 50%;
+    --play-hover-foreground:195 70% 45%;
+
     /* Warning - Soft Coral/Red */
     --warning: 0 70% 60%;
     --warning-foreground: 0 0% 100%;
@@ -179,7 +183,7 @@
 
   .login-input:focus {
     @apply outline-none ring-2;
-    ring-color: hsl(var(--primary));
+    --tw-ring-color: hsl(var(--primary));
   }
 
   .login-button {
