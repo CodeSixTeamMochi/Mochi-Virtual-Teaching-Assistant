@@ -21,6 +21,8 @@ import {
   Dialog,
   DialogContent,
 } from "@/components/ui/dialog";
+
+// Retained import for offline fallback
 import localforage from "localforage";
 
 type TemplateMode = "select" | "ai" | "custom";
@@ -68,7 +70,7 @@ const CreateActivity = () => {
   const imageInputRefs = useRef<(HTMLInputElement | null)[]>([null, null, null]);
   const currentQuestion = questions[currentQuestionIndex];
 
-  // 1. Handle AI Generation Trigger (Updated to fix Correct Answer Bug)
+  // 1. Handle AI Generation Trigger
   const handleGenerate = async () => {
     if (!gameTopic || !subject || !description) {
       alert("Please fill in the Theme, Learning Goal, and Mochi's Instructions!");
@@ -89,7 +91,6 @@ const CreateActivity = () => {
       const data = await response.json();
       
       const populatedQuestions: QuestionData[] = data.map((aiQ: any) => {
-        // Find which option matches the AI's correct answer text
         const correctIndex = aiQ.options.findIndex((opt: any) => opt.label === aiQ.correct_answer);
 
         return {
@@ -99,7 +100,6 @@ const CreateActivity = () => {
             label: opt.label,
             image: opt.image || null 
           })),
-          // Set to the actual correct index, or fallback to 0 if something went wrong
           correctOptionIndex: correctIndex !== -1 ? correctIndex : 0 
         };
       });
@@ -117,7 +117,7 @@ const CreateActivity = () => {
     }
   };
 
-  // 2. Handle Final Save using LocalForage (Bypasses 5MB limit)
+  // 2. Handle Final Save to Neon Cloud Database
   const handleSave = async () => {
     try {
       const title = questions[0].gameTitle || gameTopic || "Custom Game";
@@ -133,25 +133,36 @@ const CreateActivity = () => {
         }))
       }));
 
-      const newCustomGame = {
-        id: Date.now().toString(),
-        name: title,
-        description: description || "Interactive Revision Game",
-        questionCount: formattedQuestions.length,
-        questions: formattedQuestions,
-        createdAt: new Date().toISOString()
+      // ACTIVE LOGIC: NEON CLOUD DATABASE 
+      const payload = {
+        teacher_id: 1, // Hardcoded until WSO2 is fully linked
+        title: title,  // Matches 'title' column in DB
+        instructions: description || "Interactive Revision Game", // Matches 'instructions' column
+        image_urls: formattedQuestions // Storing the full game structure in the JSONB column
       };
 
-      // Pull existing games from the heavy-duty IndexedDB
-      const existingGames: any = (await localforage.getItem("created_games")) || [];
-      
-      // Save the new array back to IndexedDB
-      await localforage.setItem("created_games", [newCustomGame, ...existingGames]);
+      console.log("Sending payload:", payload);
 
-      navigate("/RevisionGames"); 
+      const response = await fetch("http://localhost:5000/api/revision/activities", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Server returned ${response.status}: ${errorText}`);
+      }
+
+      const data = await response.json();
+      console.log("Success! Game saved to Neon DB with ID:", data.game?.game_id);
+      navigate("/revision-games"); 
+
     } catch (error) {
-      console.error("Error saving game:", error);
-      alert("Failed to save the game. The images might be too large.");
+      console.error("Save Error:", error);
+      alert("Network error or Server error. Check your backend console!");
     }
   };
 

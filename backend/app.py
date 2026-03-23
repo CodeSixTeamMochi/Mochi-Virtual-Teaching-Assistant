@@ -9,25 +9,21 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from config import Config
 
-# 1. Database Connection Pool Imports
 from db import get_db_connection, release_db_connection
-
-# 2. Feature Blueprint Imports
 from revisionGamesBackend.routes import revision_games_bp
 
 def create_app():
     app = Flask(__name__)
     app.config.from_object(Config)
     
-    # 3. Configure CORS securely for the frontend
+    # Allow larger payloads (e.g. 16MB) in case Base64 images get large
+    app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024 
+    
+    # CORS securely allows frontend communication
     CORS(app, origins=[Config.FRONTEND_URL, "http://localhost:5173", "http://localhost:3000", "http://localhost:8080"])
 
-    # 4. Register the Revision Games Blueprint
+    # Register the Revision Games Blueprint
     app.register_blueprint(revision_games_bp, url_prefix="/api/revision")
-
-    # ──────────────────────────────────────
-    # GLOBAL ROUTES & HEALTH CHECKS
-    # ──────────────────────────────────────
 
     @app.route('/')
     def home():
@@ -44,7 +40,6 @@ def create_app():
             conn = get_db_connection()
             cursor = conn.cursor()
             
-            # Secure query to count your seeded students
             cursor.execute("SELECT count(*) FROM students;")
             count = cursor.fetchone()[0]
             cursor.close()
@@ -56,7 +51,6 @@ def create_app():
         except Exception as e:
             return jsonify({"status": "error", "message": str(e)}), 500
         finally:
-            # ALWAYS release the connection back to the pool
             if conn:
                 release_db_connection(conn)
 
