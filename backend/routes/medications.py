@@ -1,6 +1,5 @@
 from flask import Blueprint, jsonify, request
 from db import get_db_connection, release_db_connection
-import datetime
 
 medications_bp = Blueprint('medications', __name__)
 
@@ -10,7 +9,6 @@ def get_medications():
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
-        # FIXED: Changed s.id to s.student_id
         cursor.execute("""
             SELECT 
                 ms.schedule_id,
@@ -19,10 +17,9 @@ def get_medications():
                 ms.dosage,
                 ms.time_of_day,
                 COALESCE(ml.status, 'pending') as status,
-                ml.administered_at as seen_at,
-                CASE WHEN ml.status = 'completed' THEN ml.administered_at END as completed_at
+                ml.administered_at
             FROM medication_schedules ms
-            LEFT JOIN students s ON ms.student_id = s.student_id 
+            LEFT JOIN students s ON ms.student_id = s.student_id
             LEFT JOIN medication_logs ml ON ms.schedule_id = ml.schedule_id
             ORDER BY ms.time_of_day
         """)
@@ -31,25 +28,39 @@ def get_medications():
         
         medications_list = []
         for med in medications:
-            medications_list.append({
+            med_data = {
                 "id": str(med[0]),
                 "studentName": med[1] or "Unknown",
                 "medicationName": med[2],
-                "dosage": str(med[3]), 
-                "time": str(med[4]), 
+                "dosage": med[3],
+                "time": med[4],
                 "status": med[5],
-                "seenAt": med[6].isoformat() if med[6] else None,
-                "completedAt": med[7].isoformat() if med[7] else None,
                 "notes": ""
-            })
+            }
+            
+            # Add timestamps based on status
+            if med[6]:  # administered_at exists
+                if med[5] == "seen":
+                    med_data["seenAt"] = med[6].isoformat()
+                    med_data["completedAt"] = None
+                elif med[5] == "completed":
+                    med_data["seenAt"] = med[6].isoformat()
+                    med_data["completedAt"] = med[6].isoformat()
+            else:
+                med_data["seenAt"] = None
+                med_data["completedAt"] = None
+            
+            medications_list.append(med_data)
         
         return jsonify(medications_list), 200
         
     except Exception as e:
-        print(f"Medication Route Error (GET): {e}")
+        print(f"Error in get_medications: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn: release_db_connection(conn)
+        release_db_connection(conn)
 
 
 # POST - Add medication schedule
@@ -68,7 +79,7 @@ def add_medication():
         
         cursor = conn.cursor()
         
-        # FIXED: Changed SELECT id to SELECT student_id
+        # Get student_id from name
         cursor.execute("SELECT student_id FROM students WHERE name = %s LIMIT 1", (student_name,))
         student = cursor.fetchone()
         
@@ -77,6 +88,7 @@ def add_medication():
         
         student_id = student[0]
         
+        # Insert schedule
         cursor.execute("""
             INSERT INTO medication_schedules (student_id, medication_name, dosage, time_of_day)
             VALUES (%s, %s, %s, %s)
@@ -100,15 +112,14 @@ def add_medication():
         }), 201
         
     except Exception as e:
-        if conn: conn.rollback()
-        print(f"Medication Route Error (POST): {e}")
+        conn.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn: release_db_connection(conn)
+        release_db_connection(conn)
 
 
 # PUT - Update medication status
-@medications_bp.route('/api/medications/<schedule_id>', methods=['PUT'])
+@medications_bp.route('/api/medications/<schedule_id>/status', methods=['PUT'])
 def update_medication_status(schedule_id):
     conn = get_db_connection()
     try:
@@ -120,7 +131,13 @@ def update_medication_status(schedule_id):
         
         cursor = conn.cursor()
         
-        if status == 'seen':
+        if status == 'pending':
+            # Delete log to reset to pending
+            cursor.execute("DELETE FROM medication_logs WHERE schedule_id = %s", (schedule_id,))
+            timestamp = None
+            
+        elif status == 'seen':
+            # Insert or update log with 'seen' status
             cursor.execute("""
                 INSERT INTO medication_logs (schedule_id, administered_at, status)
                 VALUES (%s, CURRENT_TIMESTAMP, 'seen')
@@ -128,43 +145,31 @@ def update_medication_status(schedule_id):
                 DO UPDATE SET administered_at = CURRENT_TIMESTAMP, status = 'seen'
                 RETURNING administered_at
             """, (schedule_id,))
+            result = cursor.fetchone()
+            timestamp = result[0].isoformat() if result else None
             
         elif status == 'completed':
+            # Update log to completed
             cursor.execute("""
-                UPDATE medication_logs
-                SET status = 'completed', administered_at = CURRENT_TIMESTAMP
-                WHERE schedule_id = %s
+                INSERT INTO medication_logs (schedule_id, administered_at, status)
+                VALUES (%s, CURRENT_TIMESTAMP, 'completed')
+                ON CONFLICT (schedule_id)
+                DO UPDATE SET status = 'completed', administered_at = CURRENT_TIMESTAMP
                 RETURNING administered_at
             """, (schedule_id,))
-        else:
-            cursor.execute("DELETE FROM medication_logs WHERE schedule_id = %s", (schedule_id,))
+            result = cursor.fetchone()
+            timestamp = result[0].isoformat() if result else None
         
         conn.commit()
         cursor.close()
-        return jsonify({"status": status}), 200
+        
+        return jsonify({
+            "status": status,
+            "timestamp": timestamp
+        }), 200
         
     except Exception as e:
-        if conn: conn.rollback()
-        print(f"Medication Route Error (PUT): {e}")
+        conn.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn: release_db_connection(conn)
-
-
-# DELETE 
-@medications_bp.route('/api/medications/<schedule_id>', methods=['DELETE'])
-def delete_medication(schedule_id):
-    conn = get_db_connection()
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM medication_logs WHERE schedule_id = %s", (schedule_id,))
-        cursor.execute("DELETE FROM medication_schedules WHERE schedule_id = %s", (schedule_id,))
-        conn.commit()
-        cursor.close()
-        return jsonify({"success": True}), 200
-    except Exception as e:
-        if conn: conn.rollback()
-        print(f"Medication Route Error (DELETE): {e}")
-        return jsonify({"error": str(e)}), 500
-    finally:
-        if conn: release_db_connection(conn)
+        release_db_connection(conn)

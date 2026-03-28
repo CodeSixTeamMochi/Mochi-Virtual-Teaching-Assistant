@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { Heart, Search, Plus } from "lucide-react";
-import { Student } from "@/Data/mockData";
+import { Student } from "@/Data/mockData.ts";
 import StudentCard from "./StudentCard";
 import StudentHealthModal from "./StudentHealthModal";
-import { classroomsAPI } from "@/services/api";
+import { studentsAPI, classroomsAPI } from "@/services/api";
 
 interface Props {
   students: Student[];
@@ -12,43 +12,63 @@ interface Props {
 
 const StudentHealthRecords = ({ students, onAddStudent }: Props) => {
   const [search, setSearch] = useState("");
-  // FIXED: Default to "All Classes" so the invisible filter is removed!
-  const [selectedClass, setSelectedClass] = useState("All Classes"); 
+  const [selectedClass, setSelectedClass] = useState("");
   const [isModalOpen, setIsModalOpen] = useState(false);
   
+  // Database students - FETCHING FROM DATABASE
+  const [databaseStudents, setDatabaseStudents] = useState<Array<{
+    id: string;
+    name: string;
+    parentPhone: string;
+    classGroup: string;
+  }>>([]);
+  
+  // Classrooms - FETCHING FROM DATABASE
   const [classOptions, setClassOptions] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  // Fetch classrooms from database on mount
+  // Fetch students and classrooms from database on mount
   useEffect(() => {
-    const fetchClassrooms = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
+        setError(null);
+        
+        // Fetch students
+        const studentsData = await studentsAPI.getAll();
+        setDatabaseStudents(studentsData);
+        
+        // Fetch classrooms
         const classroomsData = await classroomsAPI.getAll();
-        // Handle different possible DB column names (name vs room_number)
-        const classNames = classroomsData.map((c: any) => c.name || c.room_number || c.classGroup);
-        setClassOptions(classNames.filter(Boolean));
+        const classNames = classroomsData.map((c: any) => c.name);
+        setClassOptions(classNames);
+        
+        // Set default selected class to first classroom
+        if (classNames.length > 0) {
+          setSelectedClass(classNames[0]);
+        }
       } catch (err) {
-        console.error("Error fetching classrooms:", err);
-        setClassOptions(["Class A", "Class B"]);
+        console.error("Error fetching data:", err);
+        setError("Failed to load data from database");
       } finally {
         setLoading(false);
       }
     };
     
-    fetchClassrooms();
+    fetchData();
   }, []);
 
-  // FIXED: We now show students if "All Classes" is selected OR if it matches
+  // Filter out students already in health records
+  const availableStudents = databaseStudents.filter(
+    (dbStudent) => !students.find((s) => s.id === dbStudent.id)
+  );
+  
+  // Filter students for display
   const filtered = students.filter(
     (s) =>
-      (selectedClass === "All Classes" || s.classGroup === selectedClass) &&
+      s.classGroup === selectedClass &&
       s.name.toLowerCase().includes(search.toLowerCase())
-  );
-
-  // Find students who don't have health data yet for the Add Modal
-  const availableStudents = students.filter(
-    (s) => (!s.allergies || s.allergies.length === 0) && (!s.medicines || s.medicines.length === 0)
   );
 
   return (
@@ -81,18 +101,24 @@ const StudentHealthRecords = ({ students, onAddStudent }: Props) => {
               value={selectedClass}
               onChange={(e) => setSelectedClass(e.target.value)}
               className="h-9 w-40 rounded-lg border border-input bg-secondary/50 px-3 text-sm text-card-foreground outline-none focus:ring-1 focus:ring-ring"
+              disabled={loading || error !== null}
             >
-              {/* FIXED: Added the All Classes option */}
-              <option value="All Classes">All Classes</option>
-              {classOptions.map((c) => (
-                <option key={c} value={c}>
-                  {c}
+              {classOptions.length === 0 ? (
+                <option value="">
+                  {loading ? "Loading..." : error ? "Error loading" : "No classes"}
                 </option>
-              ))}
+              ) : (
+                classOptions.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))
+              )}
             </select>
             <button
               onClick={() => setIsModalOpen(true)}
-              className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90"
+              disabled={loading || error !== null}
+              className="flex items-center gap-2 rounded-lg bg-primary px-6 py-2 text-sm font-semibold text-primary-foreground transition-opacity hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Plus className="h-4 w-4" />
               Add
@@ -106,9 +132,23 @@ const StudentHealthRecords = ({ students, onAddStudent }: Props) => {
             <div className="flex h-24 items-center justify-center">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
             </div>
+          ) : error ? (
+            <div className="flex h-24 flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border">
+              <p className="text-sm text-destructive">{error}</p>
+              <button
+                onClick={() => window.location.reload()}
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+              >
+                Retry
+              </button>
+            </div>
           ) : filtered.length === 0 ? (
             <div className="flex h-24 items-center justify-center rounded-xl border border-dashed border-border">
-              <p className="text-sm text-muted-foreground">No students found</p>
+              <p className="text-sm text-muted-foreground">
+                {students.length === 0 
+                  ? "No students in health records yet. Click 'Add' to get started!" 
+                  : "No students found in this class"}
+              </p>
             </div>
           ) : (
             filtered.map((student) => (
@@ -126,6 +166,7 @@ const StudentHealthRecords = ({ students, onAddStudent }: Props) => {
         onClose={() => setIsModalOpen(false)}
         onSave={onAddStudent} 
         availableStudents={availableStudents}
+        classOptions={classOptions}
       />
     </>
   );

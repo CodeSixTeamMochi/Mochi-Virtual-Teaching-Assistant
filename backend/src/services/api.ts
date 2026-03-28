@@ -1,17 +1,17 @@
-const API_BASE_URL = 'http://127.0.0.1:5000';
+// src/services/api.ts
 
-// ==========================================
-// EMERGENCY CONTACTS API
-// ==========================================
+const API_BASE_URL = 'http://localhost:5000/api';
+
+// Emergency Contacts API
 export const emergencyContactsAPI = {
   getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts`);
+    const response = await fetch(`${API_BASE_URL}/emergency-contacts`);
     if (!response.ok) throw new Error('Failed to fetch emergency contacts');
     return response.json();
   },
 
-  add: async (contact: { name: string; phone: string; type: string; icon: string }) => {
-    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts`, {
+  add: async (contact: any) => {
+    const response = await fetch(`${API_BASE_URL}/emergency-contacts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(contact),
@@ -20,8 +20,8 @@ export const emergencyContactsAPI = {
     return response.json();
   },
 
-  update: async (id: string, contact: { name: string; phone: string; type: string; icon: string }) => {
-    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts/${id}`, {
+  update: async (id: string, contact: any) => {
+    const response = await fetch(`${API_BASE_URL}/emergency-contacts/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(contact),
@@ -31,7 +31,7 @@ export const emergencyContactsAPI = {
   },
 
   delete: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/emergency-contacts/${id}`, {
       method: 'DELETE',
     });
     if (!response.ok) throw new Error('Failed to delete emergency contact');
@@ -39,24 +39,16 @@ export const emergencyContactsAPI = {
   },
 };
 
-// ==========================================
-// MEDICATIONS API
-// ==========================================
+// Medications API
 export const medicationsAPI = {
   getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/medications`);
+    const response = await fetch(`${API_BASE_URL}/medications`);
     if (!response.ok) throw new Error('Failed to fetch medications');
     return response.json();
   },
 
-  add: async (medication: {
-    studentName: string;
-    medicationName: string;
-    dosage: string;
-    time: string;
-    notes?: string;
-  }) => {
-    const response = await fetch(`${API_BASE_URL}/api/medications`, {
+  add: async (medication: any) => {
+    const response = await fetch(`${API_BASE_URL}/medications`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(medication),
@@ -65,8 +57,8 @@ export const medicationsAPI = {
     return response.json();
   },
 
-  updateStatus: async (scheduleId: string, status: 'pending' | 'seen' | 'completed') => {
-    const response = await fetch(`${API_BASE_URL}/api/medications/${scheduleId}/status`, {
+  updateStatus: async (medicationId: string, status: 'pending' | 'seen' | 'completed') => {
+    const response = await fetch(`${API_BASE_URL}/medications/${medicationId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
@@ -76,37 +68,45 @@ export const medicationsAPI = {
   },
 };
 
-// ==========================================
-// STUDENTS API
-// ==========================================
+// Students API - THIS IS WHAT'S MISSING!
 export const studentsAPI = {
   getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/students`);
+    const response = await fetch(`${API_BASE_URL}/students`);
     if (!response.ok) throw new Error('Failed to fetch students');
     return response.json();
   },
 
-  addHealthRecord: async (studentData: {
-    id: string;
-    allergies: string[];
-    medicines: string[];
-  }) => {
-    const response = await fetch(`${API_BASE_URL}/api/students/health`, {
+  getHealthRecords: async () => {
+    const response = await fetch(`${API_BASE_URL}/students/health-records`);
+    if (!response.ok) throw new Error('Failed to fetch student health records');
+    return response.json();
+  },
+
+  addHealthRecord: async (data: { id: string; allergies: string; medicines: string }) => {
+    const response = await fetch(`${API_BASE_URL}/students/health`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(studentData),
+      body: JSON.stringify(data),
     });
     if (!response.ok) throw new Error('Failed to add health record');
     return response.json();
   },
+
+  update: async (id: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}/students/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update student');
+    return response.json();
+  },
 };
 
-// ==========================================
-// CLASSROOMS API
-// ==========================================
+// Classrooms API
 export const classroomsAPI = {
   getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/classrooms`);
+    const response = await fetch(`${API_BASE_URL}/classrooms`);
     if (!response.ok) throw new Error('Failed to fetch classrooms');
     return response.json();
   },

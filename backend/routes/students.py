@@ -3,26 +3,32 @@ from db import get_db_connection, release_db_connection
 
 students_bp = Blueprint('students', __name__)
 
-# GET all students + Health Profiles
+# GET all students (for modal - students not yet in health records)
 @students_bp.route('/api/students', methods=['GET'])
 def get_students():
     conn = get_db_connection()
     try:
         cursor = conn.cursor()
+        cursor = conn.cursor()
         
-        # FIXED: Joining the health_profiles table to grab all medical data
+        # First, let's try a simple query to see what's in parents table
+        try:
+            cursor.execute("SELECT * FROM parents LIMIT 1")
+            parent_sample = cursor.fetchone()
+            if parent_sample:
+                print(f"Parent table sample data: {parent_sample}")
+                print(f"Parent table column count: {len(parent_sample)}")
+        except Exception as e:
+            print(f"Could not query parents table: {e}")
+        
         cursor.execute("""
             SELECT 
                 s.student_id,
                 s.name,
-                hp.emergency_contact,
-                c.room_number,
-                hp.allergies,
-                hp."Medicines",
-                hp.blood_type
+                '' as parent_phone,
+                COALESCE(c.room_number, 'Not Assigned') as class_group
             FROM students s
             LEFT JOIN classrooms c ON s.classroom_id = c.classroom_id
-            LEFT JOIN health_profiles hp ON s.student_id = hp.student_id
             ORDER BY s.name
         """)
         students = cursor.fetchall()
@@ -30,33 +36,107 @@ def get_students():
         
         students_list = []
         for student in students:
-            # PostgreSQL stores these as text, React expects arrays. Let's split them safely!
-            allergies_raw = student[4]
-            medicines_raw = student[5]
-            
-            allergies_list = [a.strip() for a in allergies_raw.split(',')] if allergies_raw else []
-            medicines_list = [m.strip() for m in medicines_raw.split(',')] if medicines_raw else []
-            
             students_list.append({
                 "id": str(student[0]),
-                "name": student[1] or "Unknown",
-                "parentPhone": student[2] or "N/A",
-                "classGroup": str(student[3]) if student[3] else "Not Assigned",
-                "allergies": allergies_list,
-                "medicines": medicines_list,
-                "bloodType": student[6] or "Unknown"
+                "name": student[1],
+                "parentPhone": student[2] or "",
+                "classGroup": student[3] or "Not Assigned"
             })
         
         return jsonify(students_list), 200
         
     except Exception as e:
-        print(f"Students Route Error (GET): {e}")
+        print(f"Error in get_students: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn: release_db_connection(conn)
+        release_db_connection(conn)
 
 
-# POST - Add/Update student health records
+# GET all students WITH health profiles (for display in health records)
+@students_bp.route('/api/students/health-records', methods=['GET'])
+def get_health_records():
+    conn = get_db_connection()
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT 
+                s.student_id,
+                s.name,
+                COALESCE(hp.emergency_contact, '') as parent_phone,
+                COALESCE(c.room_number, 'Not Assigned') as class_group,
+                COALESCE(hp.allergies, '') as allergies
+            FROM students s
+            LEFT JOIN classrooms c ON s.classroom_id = c.classroom_id
+            INNER JOIN health_profiles hp ON s.student_id = hp.student_id
+            ORDER BY s.name
+        """)
+        records = cursor.fetchall()
+        cursor.close()
+        
+        records_list = []
+        for record in records:
+            # Parse allergies from comma-separated string
+            allergies_str = record[4] or ""
+            allergies = [a.strip() for a in allergies_str.split(',') if a.strip()]
+            
+            records_list.append({
+                "id": str(record[0]),
+                "name": record[1],
+                "parentPhone": record[2] or "",
+                "classGroup": record[3] or "Not Assigned",
+                "allergies": allergies,
+                "medicines": []
+            })
+        
+        return jsonify(records_list), 200
+        
+    except Exception as e:
+        print(f"Error in get_health_records: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        release_db_connection(conn)
+
+
+# POST add student health profile
+@students_bp.route('/api/students/health', methods=['POST'])
+def add_health_record():
+    conn = get_db_connection()
+    try:
+        data = request.json
+        student_id = data.get('id')
+        allergies = ','.join(data.get('allergies', []))
+        
+        cursor = conn.cursor()
+        
+        # Insert into health_profiles
+        cursor.execute("""
+            INSERT INTO health_profiles (student_id, allergies, emergency_contact)
+            VALUES (%s, %s, '')
+            ON CONFLICT (student_id) DO UPDATE
+            SET allergies = EXCLUDED.allergies
+            RETURNING student_id
+        """, (student_id, allergies))
+        
+        conn.commit()
+        cursor.close()
+        
+        return jsonify({"message": "Health record added successfully", "id": student_id}), 201
+        
+    except Exception as e:
+        print(f"Error in add_health_record: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        release_db_connection(conn)
+
+
+# POST - Add student to health records (creates health profile)
 @students_bp.route('/api/students/health', methods=['POST'])
 def add_student_health():
     conn = get_db_connection()
@@ -65,38 +145,34 @@ def add_student_health():
         student_id = data.get('id')
         allergies = data.get('allergies', [])
         medicines = data.get('medicines', [])
-        blood_type = data.get('bloodType', 'Unknown')
-        emergency_contact = data.get('parentPhone', '')
+        
+        if not student_id:
+            return jsonify({"error": "Student ID is required"}), 400
         
         cursor = conn.cursor()
         
-        # FIXED: Updating all columns in the health profile
+        # Convert allergies list to comma-separated string
+        allergies_str = ','.join(allergies) if allergies else ''
+        
+        # Insert or update health profile
         cursor.execute("""
-            INSERT INTO health_profiles (student_id, allergies, emergency_contact, "Medicines", blood_type)
-            VALUES (%s, %s, %s, %s, %s)
+            INSERT INTO health_profiles (student_id, allergies, emergency_contact)
+            VALUES (%s, %s, '')
             ON CONFLICT (student_id) 
-            DO UPDATE SET 
-                allergies = EXCLUDED.allergies,
-                emergency_contact = EXCLUDED.emergency_contact,
-                "Medicines" = EXCLUDED."Medicines",
-                blood_type = EXCLUDED.blood_type
+            DO UPDATE SET allergies = EXCLUDED.allergies
             RETURNING student_id
-        """, (
-            student_id, 
-            ','.join(allergies) if allergies else '',
-            emergency_contact,
-            ','.join(medicines) if medicines else '',
-            blood_type
-        ))
+        """, (student_id, allergies_str))
         
         conn.commit()
         cursor.close()
         
-        return jsonify({"message": "Health record synchronized successfully"}), 201
+        return jsonify({
+            "message": "Health record added successfully",
+            "studentId": student_id
+        }), 201
         
     except Exception as e:
-        if conn: conn.rollback()
-        print(f"Students Route Error (POST): {e}")
+        conn.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
-        if conn: release_db_connection(conn)
+        release_db_connection(conn)

@@ -12,27 +12,27 @@ interface StudentHealthModalProps {
     parentPhone?: string;
     classGroup?: string;
   }>;
+  classOptions?: string[];  
 }
 
 const StudentHealthModal = ({ 
   isOpen, 
   onClose, 
   onSave, 
-  availableStudents = []
+  availableStudents = [],
+  classOptions = ["Class A", "Class B", "Class C"]  
 }: StudentHealthModalProps) => {
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
   const [formData, setFormData] = useState<Student>({
     id: "",
     name: "",
     parentPhone: "",
-    classGroup: "Class A",
+    classGroup: classOptions[0] || "Class A",  
     allergies: [],
     medicines: [],
   });
   
   const [searchQuery, setSearchQuery] = useState("");
-  // const [allergyInput, setAllergyInput] = useState("");
-  // const [medicineInput, setMedicineInput] = useState("");
 
   // Filter students for selection
   const filteredStudents = availableStudents.filter((student) =>
@@ -45,51 +45,13 @@ const StudentHealthModal = ({
       id: student.id,
       name: student.name,
       parentPhone: student.parentPhone || "",
-      classGroup: student.classGroup || "Class A",
+      classGroup: student.classGroup || classOptions[0] || "Class A", 
       allergies: [],
       medicines: [],
     };
     setSelectedStudent(newStudent);
     setFormData(newStudent);
   };
-
-  // // Handle adding allergy
-  // const handleAddAllergy = () => {
-  //   if (allergyInput.trim()) {
-  //     setFormData({
-  //       ...formData,
-  //       allergies: [...formData.allergies, allergyInput.trim()],
-  //     });
-  //     setAllergyInput("");
-  //   }
-  // };
-
-  // // Handle removing allergy
-  // const handleRemoveAllergy = (index: number) => {
-  //   setFormData({
-  //     ...formData,
-  //     allergies: formData.allergies.filter((_, i) => i !== index),
-  //   });
-  // };
-
-  // // Handle adding medicine
-  // const handleAddMedicine = () => {
-  //   if (medicineInput.trim()) {
-  //     setFormData({
-  //       ...formData,
-  //       medicines: [...formData.medicines, medicineInput.trim()],
-  //     });
-  //     setMedicineInput("");
-  //   }
-  // };
-
-  // // Handle removing medicine
-  // const handleRemoveMedicine = (index: number) => {
-  //   setFormData({
-  //     ...formData,
-  //     medicines: formData.medicines.filter((_, i) => i !== index),
-  //   });
-  // };
 
   // Handle save
   const handleSubmit = (e: React.FormEvent) => {
@@ -105,20 +67,18 @@ const StudentHealthModal = ({
       id: "",
       name: "",
       parentPhone: "",
-      classGroup: "Class A",
+      classGroup: classOptions[0] || "Class A",  
       allergies: [],
       medicines: [],
     });
     setSearchQuery("");
-    // setAllergyInput("");
-    // setMedicineInput("");
     onClose();
   };
 
   if (!isOpen) return null;
 
-  // STEP 1: Select Student from Database
-  if (!selectedStudent) { // ✅ FIXED: Removed editingStudent check
+  // Select Student from Database
+  if (!selectedStudent) {
     return (
       <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
         <div className="w-full max-w-2xl rounded-2xl bg-card p-6 shadow-xl">
@@ -189,14 +149,14 @@ const StudentHealthModal = ({
     );
   }
 
-  // STEP 2: Add Health Information
+  // Add Health Information
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
       <div className="w-full max-w-lg rounded-2xl bg-card p-6 shadow-xl">
         {/* Header */}
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-xl font-bold text-card-foreground">
-            Add Student Health Record {/* ✅ FIXED: Removed conditional */}
+            Add Student Health Record
           </h2>
           <button onClick={handleClose} className="rounded-full p-1 hover:bg-secondary">
             <X className="h-5 w-5" />
@@ -230,7 +190,7 @@ const StudentHealthModal = ({
             />
           </div>
 
-          {/* Class */}
+          
           <div>
             <label className="mb-1 block text-sm font-medium text-card-foreground">
               Class
@@ -240,103 +200,17 @@ const StudentHealthModal = ({
               onChange={(e) => setFormData({ ...formData, classGroup: e.target.value })}
               className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             >
-              <option value="Class A">Class A</option>
-              <option value="Class B">Class B</option>
-              <option value="Class C">Class C</option>
+              {classOptions.length === 0 ? (
+                <option value="">Loading classes...</option>
+              ) : (
+                classOptions.map((className) => (
+                  <option key={className} value={className}>
+                    {className}
+                  </option>
+                ))
+              )}
             </select>
           </div>
-
-          {/* Allergies
-          <div>
-            <label className="mb-1 block text-sm font-medium text-card-foreground">
-              Allergies
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={allergyInput}
-                onChange={(e) => setAllergyInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddAllergy();
-                  }
-                }}
-                placeholder="Type allergy and press Enter"
-                className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button
-                type="button"
-                onClick={handleAddAllergy}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-              >
-                Add
-              </button>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {formData.allergies.map((allergy, index) => (
-                <span
-                  key={index}
-                  className="flex items-center gap-1 rounded-full bg-destructive/10 px-3 py-1 text-sm text-destructive"
-                >
-                  {allergy}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveAllergy(index)}
-                    className="hover:text-destructive/80"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div> */}
-
-          {/* Medicines
-          <div>
-            <label className="mb-1 block text-sm font-medium text-card-foreground">
-              Medicines
-            </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={medicineInput}
-                onChange={(e) => setMedicineInput(e.target.value)}
-                onKeyPress={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    handleAddMedicine();
-                  }
-                }}
-                placeholder="Type medicine and press Enter"
-                className="flex-1 rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-              />
-              <button
-                type="button"
-                onClick={handleAddMedicine}
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
-              >
-                Add
-              </button>
-            </div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {formData.medicines.map((medicine, index) => (
-                <span
-                  key={index}
-                  className="flex items-center gap-1 rounded-full bg-primary/10 px-3 py-1 text-sm text-primary"
-                >
-                  {medicine}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveMedicine(index)}
-                    className="hover:text-primary/80"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div> */}
 
           {/* Buttons */}
           <div className="flex gap-3">
@@ -344,7 +218,7 @@ const StudentHealthModal = ({
               type="submit"
               className="flex-1 rounded-lg bg-primary px-6 py-2 font-semibold text-primary-foreground hover:opacity-90"
             >
-              Add Student {/* ✅ FIXED: Removed conditional */}
+              Add Student
             </button>
             <button
               type="button"

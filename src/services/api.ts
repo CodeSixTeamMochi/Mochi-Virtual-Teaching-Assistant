@@ -1,130 +1,64 @@
-// ============================================================
-// API Service Layer for Mochi - Virtual Teaching Assistant
-// ============================================================
+// src/services/api.ts
 
-import { Student, MedicationReminder } from "@/Data/mockData";
+const API_BASE_URL = 'http://localhost:5000/api';
 
-// Simulated API delay
-const delay = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
-export const api = {
-  // Student endpoints (mock)
-  async getStudents(): Promise<Student[]> {
-    await delay(100);
-    const { students } = await import("@/Data/mockData");
-    return students;
-  },
-
-  async updateStudent(student: Student): Promise<Student> {
-    await delay(100);
-    return student;
-  },
-
-  // Medication alert endpoints (mock)
-  async getMedicationAlerts(): Promise<MedicationReminder[]> {
-    await delay(100);
-    const { medicationReminders } = await import("@/Data/mockData");
-    return medicationReminders;
-  },
-};
-
-// --- REAL DATABASE CONNECTIONS ---
-const API_BASE_URL = 'http://127.0.0.1:5000';
-
+// Emergency Contacts API
 export const emergencyContactsAPI = {
   getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts`);
-    if (!response.ok) throw new Error('Failed to fetch contacts');
+    const response = await fetch(`${API_BASE_URL}/emergency-contacts`);
+    if (!response.ok) throw new Error('Failed to fetch emergency contacts');
     return response.json();
   },
 
-  add: async (contact: { name: string; phone: string; type: string; icon: string }) => {
-    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts`, {
+  add: async (contact: any) => {
+    const response = await fetch(`${API_BASE_URL}/emergency-contacts`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(contact),
     });
-    if (!response.ok) throw new Error('Failed to add contact');
+    if (!response.ok) throw new Error('Failed to add emergency contact');
     return response.json();
   },
 
-  update: async (id: string, contact: { name: string; phone: string; type: string; icon: string }) => {
-    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts/${id}`, {
+  update: async (id: string, contact: any) => {
+    const response = await fetch(`${API_BASE_URL}/emergency-contacts/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(contact),
     });
-    if (!response.ok) throw new Error('Failed to update contact');
+    if (!response.ok) throw new Error('Failed to update emergency contact');
     return response.json();
   },
 
   delete: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/emergency-contacts/${id}`, {
+    const response = await fetch(`${API_BASE_URL}/emergency-contacts/${id}`, {
       method: 'DELETE',
     });
-    if (!response.ok) throw new Error('Failed to delete contact');
+    if (!response.ok) throw new Error('Failed to delete emergency contact');
     return response.json();
   },
 };
 
-// --- ADDED MISSING APIs BELOW FOR THE STUDENT INFO TEAM ---
-
-export const studentsAPI = {
-  getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/students`);
-    if (!response.ok) throw new Error('Failed to fetch students');
-    return response.json();
-  },
-  
-  update: async (id: string, data: any) => {
-    const response = await fetch(`${API_BASE_URL}/api/students/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error('Failed to update student');
-    return response.json();
-  }
-};
-
-export const classroomsAPI = {
-  getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/classrooms`);
-    if (!response.ok) throw new Error('Failed to fetch classrooms');
-    return response.json();
-  }
-};
-
+// Medications API
 export const medicationsAPI = {
   getAll: async () => {
-    const response = await fetch(`${API_BASE_URL}/api/medications`); 
+    const response = await fetch(`${API_BASE_URL}/medications`);
     if (!response.ok) throw new Error('Failed to fetch medications');
     return response.json();
   },
 
-  add: async (data: any) => {
-    const response = await fetch(`${API_BASE_URL}/api/medications`, {
+  add: async (medication: any) => {
+    const response = await fetch(`${API_BASE_URL}/medications`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
+      body: JSON.stringify(medication),
     });
     if (!response.ok) throw new Error('Failed to add medication');
     return response.json();
   },
 
-  update: async (id: string, data: any) => {
-    const response = await fetch(`${API_BASE_URL}/api/medications/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data),
-    });
-    if (!response.ok) throw new Error('Failed to update medication');
-    return response.json();
-  },
-
-  // FIXED: Added the missing updateStatus function your frontend is looking for!
-  updateStatus: async (id: string, status: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/medications/${id}`, {
+  updateStatus: async (medicationId: string, status: 'pending' | 'seen' | 'completed') => {
+    const response = await fetch(`${API_BASE_URL}/medications/${medicationId}/status`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status }),
@@ -132,12 +66,48 @@ export const medicationsAPI = {
     if (!response.ok) throw new Error('Failed to update medication status');
     return response.json();
   },
+};
 
-  delete: async (id: string) => {
-    const response = await fetch(`${API_BASE_URL}/api/medications/${id}`, {
-      method: 'DELETE',
-    });
-    if (!response.ok) throw new Error('Failed to delete medication');
+// Students API - THIS IS WHAT'S MISSING!
+export const studentsAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/students`);
+    if (!response.ok) throw new Error('Failed to fetch students');
     return response.json();
-  }
+  },
+
+  getHealthRecords: async () => {
+    const response = await fetch(`${API_BASE_URL}/students/health-records`);
+    if (!response.ok) throw new Error('Failed to fetch student health records');
+    return response.json();
+  },
+
+  addHealthRecord: async (data: { id: string; allergies: string; medicines: string }) => {
+    const response = await fetch(`${API_BASE_URL}/students/health`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to add health record');
+    return response.json();
+  },
+
+  update: async (id: string, data: any) => {
+    const response = await fetch(`${API_BASE_URL}/students/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error('Failed to update student');
+    return response.json();
+  },
+};
+
+// Classrooms API
+export const classroomsAPI = {
+  getAll: async () => {
+    const response = await fetch(`${API_BASE_URL}/classrooms`);
+    if (!response.ok) throw new Error('Failed to fetch classrooms');
+    return response.json();
+  },
 };

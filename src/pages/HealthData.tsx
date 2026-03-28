@@ -9,41 +9,23 @@ import {
   MedicationReminder,
   EmergencyContact,
 } from "@/Data/mockData";
-// FIXED: Imported studentsAPI
 import { emergencyContactsAPI, medicationsAPI, studentsAPI } from "@/services/api";
 
 const HealthData = () => {
   const navigate = useNavigate();
   
-  // FIXED: Now using DATABASE instead of localStorage
+  // Students - NOW USING DATABASE
   const [students, setStudents] = useState<Student[]>([]);
   const [studentsLoading, setStudentsLoading] = useState(true);
 
-  // Medications - DATABASE
+  // Medications - NOW USING DATABASE
   const [medications, setMedications] = useState<MedicationReminder[]>([]);
   const [medicationsLoading, setMedicationsLoading] = useState(true);
 
-  // Emergency contacts - DATABASE
+  // Emergency contacts - NOW USING DATABASE
   const [emergencyContacts, setEmergencyContacts] = useState<EmergencyContact[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // FIXED: Fetch STUDENTS from database on mount
-  useEffect(() => {
-    const fetchStudents = async () => {
-      try {
-        setStudentsLoading(true);
-        const data = await studentsAPI.getAll();
-        setStudents(data);
-      } catch (err) {
-        console.error("Error fetching students:", err);
-      } finally {
-        setStudentsLoading(false);
-      }
-    };
-    
-    fetchStudents();
-  }, []);
 
   // Fetch emergency contacts from database on mount
   useEffect(() => {
@@ -81,6 +63,23 @@ const HealthData = () => {
     fetchMedications();
   }, []);
 
+  // Fetch students with health records from database on mount
+  useEffect(() => {
+    const fetchStudents = async () => {
+      try {
+        setStudentsLoading(true);
+        const data = await studentsAPI.getHealthRecords();
+        setStudents(data);
+      } catch (err) {
+        console.error("Error fetching student health records:", err);
+      } finally {
+        setStudentsLoading(false);
+      }
+    };
+    
+    fetchStudents();
+  }, []);
+
   // Check for medication reminders and send notifications
   useEffect(() => {
     const checkMedications = () => {
@@ -116,15 +115,26 @@ const HealthData = () => {
   }, [medications]);
 
   // Student handlers (DATABASE)
-  const handleAddStudent = async (newStudent: Student) => {
-    try {
-      // Assuming you want to save new health profiles back to the database
-      await studentsAPI.update(newStudent.id, newStudent);
-      setStudents((prev) => [...prev, newStudent]);
-    } catch (err) {
-      console.error("Error adding student health record:", err);
-    }
-  };
+const handleAddStudent = async (newStudent: Student) => {
+  try {
+    await studentsAPI.addHealthRecord({
+      id: newStudent.id,
+      allergies: Array.isArray(newStudent.allergies) 
+        ? newStudent.allergies.join(', ') 
+        : newStudent.allergies,
+      medicines: Array.isArray(newStudent.medicines) 
+        ? newStudent.medicines.join(', ') 
+        : newStudent.medicines,
+    });
+    
+    // Refresh the list from database
+    const data = await studentsAPI.getHealthRecords();
+    setStudents(data);
+  } catch (err) {
+    console.error("Error adding student health record:", err);
+    alert("Failed to add student health record. Please try again.");
+  }
+};
 
   // Medication handlers (DATABASE)
   const handleAddMedication = async (newMedication: MedicationReminder) => {
@@ -156,10 +166,7 @@ const HealthData = () => {
     status: "pending" | "seen" | "completed"
   ) => {
     try {
-      // Ensure we have the updateStatus function mapped in api.ts
-      if (medicationsAPI.updateStatus) {
-         await medicationsAPI.updateStatus(medicationId, status);
-      }
+      await medicationsAPI.updateStatus(medicationId, status);
       
       setMedications((prev) =>
         prev.map((m) => {
