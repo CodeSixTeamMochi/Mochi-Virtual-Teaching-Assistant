@@ -20,6 +20,9 @@ export interface ChatMessage {
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export const chatWithMochi = async (audioBlob: Blob, history: ChatMessage[], activeStudentId: string) => {
+    
+    console.log("The ID being sent is:", activeStudentId);
+
     const formData = new FormData();
     formData.append("audio", audioBlob);
     formData.append("history", JSON.stringify(history));
@@ -34,4 +37,18 @@ export const chatWithMochi = async (audioBlob: Blob, history: ChatMessage[], act
     return response.json();
 };
 
-
+export const logSuccessfulCorrection = async (studentId: string, word: string) => {
+    const response = await fetch(`${API_BASE_URL}/speech-assessments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            student_id: parseInt(studentId),
+            score: 100,
+            comments: `[MASTERED] Successfully corrected: '${word}'`
+        })
+    });
+    if (!response.ok) {
+        throw new Error('Failed to log success to database');
+    }
+    return await response.json();
+};

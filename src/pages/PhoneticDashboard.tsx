@@ -25,13 +25,13 @@ const PhoneticDashboard = () => {
         const fetchData = async () => {
             try {
                 // Fetch the full classroom roster
-                const rosterResponse = await axios.get('http://localhost:5000/students');
+                const rosterResponse = await axios.get('http://localhost:5000/api/students');
                 
                 const namesOnly = rosterResponse.data.map((student: any) => student.name);
                 setStudents(namesOnly);
 
                 // Fetch the actual assessment logs for the Cards & Graph
-                const assessmentResponse = await axios.get('http://localhost:5000/speech-assessments');
+                const assessmentResponse = await axios.get('http://localhost:5000/api/speech-assessments');
                 setAssessments(assessmentResponse.data);
                 
                 setLoading(false);

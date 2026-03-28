@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { chatWithMochi, ChatMessage } from '../services/ReinforcedLearningService';
+import { chatWithMochi, logSuccessfulCorrection, ChatMessage } from '../services/ReinforcedLearningService';
 import MochiAvatar from '../components/ReinforcedLearning/MochiAvatar';
 import FeedbackBubble from '../components/ReinforcedLearning/FeedbackBubble';
 import InteractionPill from '../components/ReinforcedLearning/InteractionPill';
@@ -42,7 +42,10 @@ export default function ReinforcedLearning() {
         const response = await fetch('http://localhost:5000/api/students');
         const data = await response.json();
         setRoster(data);
-        if (data.length > 0) setActiveStudentId(String(data[0].student_id));
+        if (data.length > 0){
+          const firstStudentId = data[0].student_id || data[0].id;
+          setActiveStudentId(String(firstStudentId));
+        }
       } catch (error) {
         console.error("Failed to fetch roster:", error);
       }
@@ -136,6 +139,7 @@ export default function ReinforcedLearning() {
         // SUCCESS LOOP
         setMood("CELEBRATING");
         setFeedback("You did it! Great job! ⭐");
+        logSuccessfulCorrection(activeStudentId, targetWord).catch(console.error);
         speakMochi(`You did it! Great job saying ${targetWord}!`, () => {
           // Wait 2 seconds, then return to normal chat
           setTimeout(() => {
@@ -547,12 +551,16 @@ export default function ReinforcedLearning() {
             {roster.length === 0 ? (
                 <option>Loading...</option>
             ) : (
-                roster.map((student) => (
-                    <option key={student.student_id} value={student.student_id}>
+                roster.map((student, index) => {
+                  const rawStudent = student as any;
+                  const actualId = rawStudent.student_id || rawStudent.id;
+                  return (
+                    <option key={actualId || index} value={actualId}>
                         {student.name}
                     </option>
-                ))
-            )}
+                  );
+                })
+          )}
           </select>
         </div>
 

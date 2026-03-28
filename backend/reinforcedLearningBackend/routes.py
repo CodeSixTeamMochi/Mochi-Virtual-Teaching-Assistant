@@ -89,6 +89,30 @@ def get_speech_assessments():
     finally:
         release_db_connection(conn)
 
+@rl_bp.route('/speech-assessments', methods=['POST'])
+def log_successful_assessment():
+    conn = get_db_connection()
+    try:
+        data = request.get_json()
+        student_id = data.get('student_id', 1)
+        score = data.get('score', 100)
+        comments = data.get('comments', 'Successfully pronounced word!')
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO speech_assessments (student_id, score, comments)
+            VALUES (%s, %s, %s)
+        """, (student_id, score, comments))
+        
+        conn.commit()
+        cursor.close()
+        return jsonify({"message": "Victory logged successfully!"}), 201
+        
+    except Exception as e:
+        conn.rollback()
+        return jsonify({"error": str(e)}), 500
+    finally:
+        release_db_connection(conn)
+
 @rl_bp.route('/speech-assessments/<int:id>', methods=['PATCH'])
 def update_assessment(id):
     conn = get_db_connection()
