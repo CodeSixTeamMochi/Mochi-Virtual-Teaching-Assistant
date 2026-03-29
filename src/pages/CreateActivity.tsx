@@ -153,7 +153,7 @@ const CreateActivity = () => {
       
       // NOTE: If this fails to navigate, check your App.tsx. 
       // If your route is actually lowercase, change this to "/revision-games"
-      navigate("/RevisionGames"); 
+      navigate("/revision-games"); 
 
     } catch (error: any) {
       console.error("Error saving game:", error);
@@ -200,7 +200,7 @@ const CreateActivity = () => {
       {mode === "custom" && (
         <>
           <motion.header initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-4 mb-6">
-            <Button variant="ghost" size="icon" onClick={() => navigate("/RevisionGames")} className="rounded-full">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/revision-games")} className="rounded-full">
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
@@ -297,7 +297,7 @@ const CreateActivity = () => {
           <motion.div key="custom-mode" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }}>
             <div className="bg-card rounded-3xl shadow-soft overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-border">
-                <Button variant="ghost" onClick={() => navigate("/RevisionGames")} className="text-muted-foreground hover:text-destructive font-semibold">
+                <Button variant="ghost" onClick={() => navigate("/revision-games")} className="text-muted-foreground hover:text-destructive font-semibold">
                   <X className="w-5 h-5 mr-2" /> Cancel
                 </Button>
                 
@@ -370,7 +370,7 @@ const CreateActivity = () => {
                     <Plus className="w-5 h-5" /> Add Question
                   </Button>
                   <Button onClick={handleSave} className="rounded-full px-8 py-3 bg-green-500 hover:bg-green-600 text-white gap-2 shadow-lg hover:shadow-xl transition-all">
-                    <Save className="w-5 h-5" /> Save Lesson
+                    <Save className="w-5 h-5" /> Save Game
                   </Button>
                 </div>
               </div>
