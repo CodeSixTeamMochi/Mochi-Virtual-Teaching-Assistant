@@ -10,7 +10,8 @@ interface Props {
 }
 
 const AddMedicationModal = ({ isOpen, onClose, onAdd, students }: Props) => {
-  const [studentName, setStudentName] = useState(students[0]?.name || "");
+  
+  const [studentId, setStudentId] = useState<string>(String(students[0]?.id || ""));
   const [medicationName, setMedicationName] = useState("");
   const [dosage, setDosage] = useState("");
   const [time, setTime] = useState("09:00");
@@ -20,11 +21,14 @@ const AddMedicationModal = ({ isOpen, onClose, onAdd, students }: Props) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (studentName && medicationName.trim() && dosage.trim() && time) {
+
+    const selectedStudent = students.find((s) => String(s.id) === studentId);
+
+    if (selectedStudent && medicationName.trim() && dosage.trim() && time) {
       const newMedication: MedicationReminder = {
-        id: `med-${Date.now()}`, // Temporary ID, backend will replace with schedule_id
-        studentName,
+        id: `med-${Date.now()}`,       
+        studentId: selectedStudent.id, 
+        studentName: selectedStudent.name, 
         medicationName: medicationName.trim(),
         dosage: dosage.trim(),
         time,
@@ -33,14 +37,14 @@ const AddMedicationModal = ({ isOpen, onClose, onAdd, students }: Props) => {
         seenAt: undefined,
         completedAt: undefined,
       };
-      
+
       onAdd(newMedication);
       handleClose();
     }
   };
 
   const handleClose = () => {
-    setStudentName(students[0]?.name || "");
+    setStudentId(String(students[0]?.id || ""));
     setMedicationName("");
     setDosage("");
     setTime("09:00");
@@ -67,8 +71,8 @@ const AddMedicationModal = ({ isOpen, onClose, onAdd, students }: Props) => {
               Student
             </label>
             <select
-              value={studentName}
-              onChange={(e) => setStudentName(e.target.value)}
+              value={studentId}
+              onChange={(e) => setStudentId(e.target.value)}
               className="w-full rounded-lg border border-input bg-background px-4 py-2 text-card-foreground outline-none focus:ring-2 focus:ring-ring"
               required
             >
@@ -76,7 +80,7 @@ const AddMedicationModal = ({ isOpen, onClose, onAdd, students }: Props) => {
                 <option value="">No students available</option>
               ) : (
                 students.map((student) => (
-                  <option key={student.id} value={student.name}>
+                  <option key={student.id} value={String(student.id)}>
                     {student.name}
                   </option>
                 ))

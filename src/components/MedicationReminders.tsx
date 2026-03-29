@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Bell, Plus, X, Eye, CheckCircle, Clock } from "lucide-react";
+import { Bell, Plus, Eye, CheckCircle, Clock } from "lucide-react";
 import { MedicationReminder, Student } from "@/Data/mockData";
 import AddMedicationModal from "./AddMedicationModal";
 import NotificationToast from "./NotificationToast";
@@ -36,10 +36,10 @@ const MedicationReminders = ({
     }
   }, []);
 
+
   const handleMarkAsSeen = (medicationId: string) => {
     const med = medications.find(m => m.id === medicationId);
-    onUpdateStatus(medicationId, "seen");
-
+    onUpdateStatus(medicationId, 'seen');
     if (med) {
       setNotification({
         title: "Medication Reminder Seen",
@@ -51,8 +51,7 @@ const MedicationReminders = ({
 
   const handleMarkAsCompleted = (medicationId: string) => {
     const med = medications.find(m => m.id === medicationId);
-    onUpdateStatus(medicationId, "completed");
-
+    onUpdateStatus(medicationId, 'completed');
     if (med) {
       setNotification({
         title: "Medication Reminder Completed",
@@ -135,7 +134,6 @@ const MedicationReminders = ({
                   key={med.id}
                   className="rounded-xl border border-border bg-background p-4"
                 >
-                  {/* View Mode - No Edit Mode */}
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1">
                       <div className="mb-2 flex items-center gap-2">
