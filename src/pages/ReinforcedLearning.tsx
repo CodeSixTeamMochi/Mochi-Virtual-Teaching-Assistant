@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { chatWithMochi, logSuccessfulCorrection, ChatMessage } from '../services/ReinforcedLearningService';
+import { chatWithMochi, logSuccessfulCorrection, logSpeechAssessment, ChatMessage } from '../services/ReinforcedLearningService';
 import MochiAvatar from '../components/ReinforcedLearning/MochiAvatar';
 import FeedbackBubble from '../components/ReinforcedLearning/FeedbackBubble';
 import InteractionPill from '../components/ReinforcedLearning/InteractionPill';
@@ -53,7 +53,9 @@ export default function ReinforcedLearning() {
     fetchRoster();
   }, []);
 
-  const cleanTextForNaturalSpeech = (text: string) => {
+  const cleanTextForNaturalSpeech = (text: string | undefined) => {
+    // If text is undefined (because the server crashed), stop immediately
+    if (!text) return "";
     return text.replace(/\./g, ",").replace(/\!/g, ".").trim();
   };
 
@@ -199,6 +201,12 @@ export default function ReinforcedLearning() {
     }
 
     if (isYes && pendingError) {
+      logSpeechAssessment(
+        activeStudentId,
+        50,
+        `[Phonetic Error] Said: '${pendingError.user}' | Target: '${pendingError.target.word}' | Status: Needs Practice`
+      ).catch(console.error);
+
       setCorrectionMode('SHOWING_CARD');
       isCorrectingRef.current = false; // Ensure mic is off while Mochi explains
       attemptCountRef.current = 0; 

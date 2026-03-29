@@ -52,14 +52,20 @@ def generate_mochi_reply(audio_data, past_messages):
     try:
         # 1. In the NEW SDK, System Instructions go into a Config object
         config = types.GenerateContentConfig(
-            system_instruction=MOCHI_INSTRUCTIONS + "\nIMPORTANT: Refer to the previous chat history to answer questions about the child's name or interests.",
-            temperature=0.7
+            system_instruction=MOCHI_INSTRUCTIONS + "\nIMPORTANT: Refer to the previous chat history.",
+            temperature=0.7,
+            response_mime_type="application/json" # To ensure clean JSON output
         )
 
         contents = []
 
-        # 2. Add Past Messages using the new types.Content structure
-        for msg in past_messages[-6:]:
+        recent_messages = past_messages[-6:]
+
+        if len(recent_messages) > 0 and recent_messages[0]['role'] != 'child':
+            recent_messages = recent_messages[1:]
+
+        # 2. Build the contents array
+        for msg in recent_messages[-6:]:
             role = "user" if msg['role'] == 'child' else "model"
             contents.append(
                 types.Content(
@@ -69,7 +75,6 @@ def generate_mochi_reply(audio_data, past_messages):
             )
 
         # 3. Add the NEW Audio Request
-        # The new SDK handles raw bytes directly, no need for manual base64!
         audio_part = types.Part.from_bytes(data=audio_data, mime_type="audio/webm")
         text_part = types.Part.from_text(text="Please listen to this and answer based on what we've talked about before.")
         
@@ -83,13 +88,11 @@ def generate_mochi_reply(audio_data, past_messages):
             contents=contents,
             config=config
         )
-        
-        raw_text = response.text.replace('```json', '').replace('```', '').strip()
 
         try:
-            ai_data = json.loads(raw_text)
+            ai_data = json.loads(response.text)
         except json.JSONDecodeError:
-            ai_data = {"transcription": "...", "mochiResponse": raw_text}
+            ai_data = {"transcription": "...", "mochiResponse": response.text}
 
         return {
             "transcription": ai_data.get("transcription", ""),

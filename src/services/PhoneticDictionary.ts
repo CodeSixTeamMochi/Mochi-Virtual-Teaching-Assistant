@@ -106,6 +106,7 @@ export const PHONETIC_DICTIONARY: Record<string, WordData> = {
     "leg": { word: "leg", phonemes: ["l", "eh", "g"], targetSound: "l", difficulty: 1, category: "BODY" },
     "lemon": { word: "lemon", phonemes: ["l", "eh", "m", "u", "n"], targetSound: "l", difficulty: 2, category: "FRUIT" },
     "lamp": { word: "lamp", phonemes: ["l", "ae", "m", "p"], targetSound: "l", difficulty: 1, category: "OBJECTS" },
+    "yellow": { word: "yellow", phonemes: ["y", "eh", "l", "oe"], targetSound: "y", difficulty: 1, category: "COLORS" },
 
     // CONSONANT CLUSTERS (Bl, Cl, Gr, Tr) //
 

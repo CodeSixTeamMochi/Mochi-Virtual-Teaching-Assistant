@@ -16,7 +16,7 @@ def chat_with_mochi():
     try:
         student_id = int(raw_student_id) 
     except (TypeError, ValueError):
-        print(f"⚠️ WARNING: React did not send a valid student_id (Received: {raw_student_id}). Defaulting to 1.")
+        print(f"WARNING: React did not send a valid student_id (Received: {raw_student_id}). Defaulting to 1.")
         student_id = 1
 
     if 'audio' not in request.files:
@@ -29,35 +29,7 @@ def chat_with_mochi():
         # 1. Get the AI's response and error detection
         reply_data = generate_mochi_reply(audio_data, past_messages)
         
-        # 2. IF Mochi caught a mistake, save it to the Neon Database instantly!
-        if reply_data.get("speech_error"):
-            conn = get_db_connection()
-            try:
-                cursor = conn.cursor()
-                error_data = reply_data["speech_error"]
-                
-                error_type = error_data.get("error_type", "Phonetic Error")
-                detected = error_data.get("detected_speech", "")
-                correction = error_data.get("correction_given", "")
-
-                formatted_comment = f"[{error_type}] Said: '{detected}' | Target: '{correction}' | Status: Needs Practice"
-
-                score = 50     # Standard score for a mistake
-                
-                cursor.execute("""
-                    INSERT INTO speech_assessments (student_id, score, comments)
-                    VALUES (%s, %s, %s)
-                """, (student_id, score, formatted_comment))
-                
-                conn.commit()
-                cursor.close()
-            except Exception as db_error:
-                print(f"Database insertion failed: {db_error}")
-                conn.rollback()
-            finally:
-                release_db_connection(conn)
-
-        # 3. Return the response to React so Mochi can speak
+        # 2. Return the response to React so Mochi can speak
         return jsonify(reply_data)
 
     except Exception as e:

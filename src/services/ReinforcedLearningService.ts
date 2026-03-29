@@ -52,3 +52,28 @@ export const logSuccessfulCorrection = async (studentId: string, word: string) =
     }
     return await response.json();
 };
+
+export const logSpeechAssessment = async (studentId: string | number, score: number, details: string) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/speech-assessments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json', 
+            },
+            body: JSON.stringify({
+                student_id: Number(studentId),
+                score: score,
+                comments: details
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to log score: ${response.statusText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error logging speech assessment to database:", error);
+        throw error;
+    }
+};
