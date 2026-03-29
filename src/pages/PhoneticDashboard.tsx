@@ -25,13 +25,13 @@ const PhoneticDashboard = () => {
         const fetchData = async () => {
             try {
                 // Fetch the full classroom roster
-                const rosterResponse = await axios.get('http://localhost:5000/students');
+                const rosterResponse = await axios.get('http://localhost:5000/api/students');
                 
                 const namesOnly = rosterResponse.data.map((student: any) => student.name);
                 setStudents(namesOnly);
 
                 // Fetch the actual assessment logs for the Cards & Graph
-                const assessmentResponse = await axios.get('http://localhost:5000/speech-assessments');
+                const assessmentResponse = await axios.get('http://localhost:5000/api/speech-assessments');
                 setAssessments(assessmentResponse.data);
                 
                 setLoading(false);
@@ -50,7 +50,7 @@ const PhoneticDashboard = () => {
         : assessments.filter(a => a.student_name === selectedStudent);
 
     //Prepare data for the graph
-    const chartData = [...filteredData].reverse().map((item, index) => ({
+    const chartData = filteredData.map((item, index) => ({
         ...item,
         session: `Session ${index + 1}`
     }));
@@ -61,8 +61,8 @@ const PhoneticDashboard = () => {
       ? Math.round(filteredData.reduce((acc, curr) => acc + curr.score, 0) / totalSessions)
       : 0;
 
-    // Assessments are ordered DESC by the DB, so the first one [0] is the most recent!
-    const latestScore = totalSessions > 0 ? filteredData[0].score : 0;
+    // Latest score is the last item in the array
+    const latestScore = totalSessions > 0 ? filteredData[totalSessions - 1].score : 0;
 
     return (
         <div className="min-h-screen bg-background p-6">
@@ -148,26 +148,28 @@ const PhoneticDashboard = () => {
                             {loading ? (
                                 <div className="h-full flex items-center justify-center text-muted-foreground">Loading chart...</div>
                             ) : chartData.length > 0 ? (
-                                <ResponsiveContainer width="100%" height="100%">
-                                    <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
-                                        <XAxis dataKey="session" axisLine={false} tickLine={false} tick={{ fill: '#888888', fontSize: 12 }} dy={10} />
-                                        <YAxis axisLine={false} tickLine={false} tick={{ fill: '#888888', fontSize: 12 }} domain={[0, 100]} />
-                                        <Tooltip
-                                            contentStyle={{ backgroundColor: 'var(--card)', borderRadius: '8px', border: '1px solid var(--border)' }}
-                                            itemStyle={{ color: 'var(--foreground)' }}
-                                        />
-                                        <Line
-                                            type="monotone"
-                                            dataKey="score"
-                                            name="Score"
-                                            stroke="#6366f1"
-                                            strokeWidth={3}
-                                            dot={{ r: 4, fill: '#6366f1', strokeWidth: 2 }}
-                                            activeDot={{ r: 6 }}
-                                        />
-                                    </LineChart>
-                                </ResponsiveContainer>
+                                <div className="w-full h-[300px]">
+                                    <ResponsiveContainer width="100%" height="100%">
+                                        <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" opacity={0.5} />
+                                            <XAxis dataKey="session" axisLine={false} tickLine={false} tick={{ fill: '#888888', fontSize: 12 }} dy={10} />
+                                            <YAxis axisLine={false} tickLine={false} tick={{ fill: '#888888', fontSize: 12 }} domain={[0, 100]} />
+                                            <Tooltip
+                                                contentStyle={{ backgroundColor: 'var(--card)', borderRadius: '8px', border: '1px solid var(--border)' }}
+                                                itemStyle={{ color: 'var(--foreground)' }}
+                                            />
+                                            <Line
+                                                type="monotone"
+                                                dataKey="score"
+                                                name="Score"
+                                                stroke="#6366f1"
+                                                strokeWidth={3}
+                                                dot={{ r: 4, fill: '#6366f1', strokeWidth: 2 }}
+                                                activeDot={{ r: 6 }}
+                                            />
+                                        </LineChart>
+                                    </ResponsiveContainer>
+                                </div>
                             ) : (
                                 <div className="h-full flex items-center justify-center text-muted-foreground">
                                     No data available for this selection.
@@ -177,7 +179,7 @@ const PhoneticDashboard = () => {
                     </Card>
 
                     {/* Teacher Insights Feed */}
-                    <Card className="p-0 overflow-hidden border border-border shadow-sm flex flex-col h-[400px] lg:h-auto">
+                    <Card className="p-0 overflow-hidden border border-border shadow-sm flex flex-col h-[400px] lg:h-[406px]">
                         <div className="p-4 bg-muted/30 border-b border-border">
                             <h2 className="font-semibold text-foreground flex items-center gap-2">
                                 <MessageSquare className="h-4 w-4 text-primary" />
@@ -189,7 +191,7 @@ const PhoneticDashboard = () => {
                             {loading ? (
                                 <p className="text-sm text-muted-foreground text-center mt-10">Syncing with Mochi...</p>
                             ) : filteredData.length > 0 ? (
-                                filteredData.map((assessment) => (
+                                [...filteredData].reverse().map((assessment) => (
                                 <div key={assessment.id} className="p-3 bg-muted/30 rounded-lg border border-border/50">
                                     <div className="flex justify-between items-center mb-1">
                                         <span className="text-xs font-bold text-muted-foreground uppercase">

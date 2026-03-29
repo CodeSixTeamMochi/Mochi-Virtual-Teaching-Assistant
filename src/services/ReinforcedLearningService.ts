@@ -20,6 +20,9 @@ export interface ChatMessage {
 const API_BASE_URL = 'http://localhost:5000/api';
 
 export const chatWithMochi = async (audioBlob: Blob, history: ChatMessage[], activeStudentId: string) => {
+    
+    console.log("The ID being sent is:", activeStudentId);
+
     const formData = new FormData();
     formData.append("audio", audioBlob);
     formData.append("history", JSON.stringify(history));
@@ -34,4 +37,59 @@ export const chatWithMochi = async (audioBlob: Blob, history: ChatMessage[], act
     return response.json();
 };
 
+export const logSuccessfulCorrection = async (studentId: string, word: string) => {
+    const response = await fetch(`${API_BASE_URL}/speech-assessments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            student_id: parseInt(studentId),
+            score: 100,
+            comments: `[MASTERED] Successfully corrected: '${word}'`
+        })
+    });
+    if (!response.ok) {
+        throw new Error('Failed to log success to database');
+    }
+    return await response.json();
+};
 
+export const logSpeechAssessment = async (studentId: string | number, score: number, details: string) => {
+    try {
+        const response = await fetch(`${API_BASE_URL}/speech-assessments`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json', 
+            },
+            body: JSON.stringify({
+                student_id: Number(studentId),
+                score: score,
+                comments: details
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to log score: ${response.statusText}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("Error logging speech assessment to database:", error);
+        throw error;
+    }
+};
+
+export const fetchDynamicPhonetics = async (word: string) => {
+    try {
+        const response = await fetch('http://localhost:5000/api/phonetics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ word: word.toLowerCase() })
+        });
+
+        if (!response.ok) return null;
+        return await response.json();
+    } catch (error) {
+        console.error("Failed to fetch dynamic phonetics:", error);
+        return null;
+    }
+};

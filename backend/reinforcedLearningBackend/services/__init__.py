@@ -1,1 +1,2 @@
 from .gemini_service import generate_mochi_reply
+from .dictionary_service import get_or_create_phonetic_data

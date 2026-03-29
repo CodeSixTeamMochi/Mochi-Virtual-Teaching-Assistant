@@ -2,6 +2,7 @@ import json
 from flask import request, jsonify
 from . import rl_bp
 from .services import generate_mochi_reply
+from .services import get_or_create_phonetic_data
 
 # Import your database connection from the root db.py file
 from db import get_db_connection, release_db_connection
@@ -16,7 +17,7 @@ def chat_with_mochi():
     try:
         student_id = int(raw_student_id) 
     except (TypeError, ValueError):
-        print(f"⚠️ WARNING: React did not send a valid student_id (Received: {raw_student_id}). Defaulting to 1.")
+        print(f"WARNING: React did not send a valid student_id (Received: {raw_student_id}). Defaulting to 1.")
         student_id = 1
 
     if 'audio' not in request.files:
@@ -29,35 +30,7 @@ def chat_with_mochi():
         # 1. Get the AI's response and error detection
         reply_data = generate_mochi_reply(audio_data, past_messages)
         
-        # 2. IF Mochi caught a mistake, save it to the Neon Database instantly!
-        if reply_data.get("speech_error"):
-            conn = get_db_connection()
-            try:
-                cursor = conn.cursor()
-                error_data = reply_data["speech_error"]
-                
-                error_type = error_data.get("error_type", "Phonetic Error")
-                detected = error_data.get("detected_speech", "")
-                correction = error_data.get("correction_given", "")
-
-                formatted_comment = f"[{error_type}] Said: '{detected}' | Target: '{correction}' | Status: Needs Practice"
-
-                score = 50     # Standard score for a mistake
-                
-                cursor.execute("""
-                    INSERT INTO speech_assessments (student_id, score, comments)
-                    VALUES (%s, %s, %s)
-                """, (student_id, score, formatted_comment))
-                
-                conn.commit()
-                cursor.close()
-            except Exception as db_error:
-                print(f"Database insertion failed: {db_error}")
-                conn.rollback()
-            finally:
-                release_db_connection(conn)
-
-        # 3. Return the response to React so Mochi can speak
+        # 2. Return the response to React so Mochi can speak
         return jsonify(reply_data)
 
     except Exception as e:
@@ -85,6 +58,30 @@ def get_speech_assessments():
         cursor.close()
         return jsonify(records)
     except Exception as e:
+        return jsonify({"error": str(e)}), 500
+    finally:
+        release_db_connection(conn)
+
+@rl_bp.route('/speech-assessments', methods=['POST'])
+def log_successful_assessment():
+    conn = get_db_connection()
+    try:
+        data = request.get_json()
+        student_id = data.get('student_id', 1)
+        score = data.get('score', 100)
+        comments = data.get('comments', 'Successfully pronounced word!')
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO speech_assessments (student_id, score, comments)
+            VALUES (%s, %s, %s)
+        """, (student_id, score, comments))
+        
+        conn.commit()
+        cursor.close()
+        return jsonify({"message": "Victory logged successfully!"}), 201
+        
+    except Exception as e:
+        conn.rollback()
         return jsonify({"error": str(e)}), 500
     finally:
         release_db_connection(conn)
@@ -147,6 +144,23 @@ def get_classroom_roster():
         return jsonify({"error": str(e)}), 500
     finally:
         release_db_connection(conn)
+
+from flask import request, jsonify
+
+@rl_bp.route('/phonetics', methods=['POST'])
+def get_dynamic_phonetics():
+    data = request.get_json()
+    target_word = data.get('word')
+    
+    if not target_word:
+        return jsonify({"error": "No word provided"}), 400
+        
+    breakdown = get_or_create_phonetic_data(target_word)
+    
+    if breakdown:
+        return jsonify(breakdown), 200
+    else:
+        return jsonify({"error": "Failed to generate phonetics"}), 500
         
 @rl_bp.route('/test-db')
 def test_db():

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { chatWithMochi, ChatMessage } from '../services/ReinforcedLearningService';
+import { chatWithMochi, logSuccessfulCorrection, logSpeechAssessment, ChatMessage } from '../services/ReinforcedLearningService';
 import MochiAvatar from '../components/ReinforcedLearning/MochiAvatar';
 import FeedbackBubble from '../components/ReinforcedLearning/FeedbackBubble';
 import InteractionPill from '../components/ReinforcedLearning/InteractionPill';
@@ -9,6 +9,7 @@ import CorrectionCard from '../components/ReinforcedLearning/CorrectionCard';
 import { getPhoneticBreakdown, WordData } from '@/services/PhoneticDictionary';
 import { useNavigate } from "react-router-dom";
 import { Button } from '@/components/ui/button';
+import { fetchDynamicPhonetics } from '@/services/ReinforcedLearningService';
 
 type CorrectionMode = 'NONE' | 'ASKING_YES_NO' | 'SHOWING_CARD';
 
@@ -42,7 +43,10 @@ export default function ReinforcedLearning() {
         const response = await fetch('http://localhost:5000/api/students');
         const data = await response.json();
         setRoster(data);
-        if (data.length > 0) setActiveStudentId(String(data[0].student_id));
+        if (data.length > 0){
+          const firstStudentId = data[0].student_id || data[0].id;
+          setActiveStudentId(String(firstStudentId));
+        }
       } catch (error) {
         console.error("Failed to fetch roster:", error);
       }
@@ -50,7 +54,9 @@ export default function ReinforcedLearning() {
     fetchRoster();
   }, []);
 
-  const cleanTextForNaturalSpeech = (text: string) => {
+  const cleanTextForNaturalSpeech = (text: string | undefined) => {
+    // If text is undefined (because the server crashed), stop immediately
+    if (!text) return "";
     return text.replace(/\./g, ",").replace(/\!/g, ".").trim();
   };
 
@@ -136,6 +142,7 @@ export default function ReinforcedLearning() {
         // SUCCESS LOOP
         setMood("CELEBRATING");
         setFeedback("You did it! Great job! ⭐");
+        logSuccessfulCorrection(activeStudentId, targetWord).catch(console.error);
         speakMochi(`You did it! Great job saying ${targetWord}!`, () => {
           // Wait 2 seconds, then return to normal chat
           setTimeout(() => {
@@ -195,6 +202,12 @@ export default function ReinforcedLearning() {
     }
 
     if (isYes && pendingError) {
+      logSpeechAssessment(
+        activeStudentId,
+        50,
+        `[Phonetic Error] Said: '${pendingError.user}' | Target: '${pendingError.target.word}' | Status: Needs Practice`
+      ).catch(console.error);
+
       setCorrectionMode('SHOWING_CARD');
       isCorrectingRef.current = false; // Ensure mic is off while Mochi explains
       attemptCountRef.current = 0; 
@@ -456,13 +469,29 @@ export default function ReinforcedLearning() {
       const { transcription, mochiResponse, mood: aiMood, speech_error } = res;
 
        if (speech_error && correctionMode === 'NONE') {
-        // Look up the correct word in your phonetic dictionary
-        const breakdown = getPhoneticBreakdown(speech_error.correction_given.toLowerCase());
+        const targetWord = speech_error.correction_given.toLowerCase();
 
-        if (breakdown) {
-          // Save the error to pending state
+        // 1.Look up the correct word in your phonetic dictionary first
+        let finalBreakdown = getPhoneticBreakdown(targetWord);
 
-          const newMistake = { user: speech_error.detected_speech, target: breakdown };
+        if (finalBreakdown) {
+          console.log(`Found '${targetWord}' locally!`);
+        } else {
+          // 2. Check DB / Ask Gemini
+          console.log(`'${targetWord}' missing. Asking Database...`);
+          finalBreakdown = await fetchDynamicPhonetics(targetWord);
+
+          if (finalBreakdown) {
+            console.log(`Retrieved '${targetWord}' from Database!`);
+          } else {
+            console.error(`FAILED: Could not resolve '${targetWord}'.`);
+          }
+        }
+
+        // If found (locally or from DB), trigger the UI
+        if (finalBreakdown) {
+
+          const newMistake = { user: speech_error.detected_speech, target: finalBreakdown };
           setPendingError(newMistake);
           setMistakeList((prev: {user: string, target: WordData}[]) => [...prev, newMistake]);
 
@@ -547,12 +576,16 @@ export default function ReinforcedLearning() {
             {roster.length === 0 ? (
                 <option>Loading...</option>
             ) : (
-                roster.map((student) => (
-                    <option key={student.student_id} value={student.student_id}>
+                roster.map((student, index) => {
+                  const rawStudent = student as any;
+                  const actualId = rawStudent.student_id || rawStudent.id;
+                  return (
+                    <option key={actualId || index} value={actualId}>
                         {student.name}
                     </option>
-                ))
-            )}
+                  );
+                })
+          )}
           </select>
         </div>
 
