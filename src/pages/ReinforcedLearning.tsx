@@ -9,6 +9,7 @@ import CorrectionCard from '../components/ReinforcedLearning/CorrectionCard';
 import { getPhoneticBreakdown, WordData } from '@/services/PhoneticDictionary';
 import { useNavigate } from "react-router-dom";
 import { Button } from '@/components/ui/button';
+import { fetchDynamicPhonetics } from '@/services/ReinforcedLearningService';
 
 type CorrectionMode = 'NONE' | 'ASKING_YES_NO' | 'SHOWING_CARD';
 
@@ -468,13 +469,29 @@ export default function ReinforcedLearning() {
       const { transcription, mochiResponse, mood: aiMood, speech_error } = res;
 
        if (speech_error && correctionMode === 'NONE') {
-        // Look up the correct word in your phonetic dictionary
-        const breakdown = getPhoneticBreakdown(speech_error.correction_given.toLowerCase());
+        const targetWord = speech_error.correction_given.toLowerCase();
 
-        if (breakdown) {
-          // Save the error to pending state
+        // 1.Look up the correct word in your phonetic dictionary first
+        let finalBreakdown = getPhoneticBreakdown(targetWord);
 
-          const newMistake = { user: speech_error.detected_speech, target: breakdown };
+        if (finalBreakdown) {
+          console.log(`Found '${targetWord}' locally!`);
+        } else {
+          // 2. Check DB / Ask Gemini
+          console.log(`'${targetWord}' missing. Asking Database...`);
+          finalBreakdown = await fetchDynamicPhonetics(targetWord);
+
+          if (finalBreakdown) {
+            console.log(`Retrieved '${targetWord}' from Database!`);
+          } else {
+            console.error(`FAILED: Could not resolve '${targetWord}'.`);
+          }
+        }
+
+        // If found (locally or from DB), trigger the UI
+        if (finalBreakdown) {
+
+          const newMistake = { user: speech_error.detected_speech, target: finalBreakdown };
           setPendingError(newMistake);
           setMistakeList((prev: {user: string, target: WordData}[]) => [...prev, newMistake]);
 

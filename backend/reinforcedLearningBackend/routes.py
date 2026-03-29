@@ -2,6 +2,7 @@ import json
 from flask import request, jsonify
 from . import rl_bp
 from .services import generate_mochi_reply
+from .services import get_or_create_phonetic_data
 
 # Import your database connection from the root db.py file
 from db import get_db_connection, release_db_connection
@@ -143,6 +144,23 @@ def get_classroom_roster():
         return jsonify({"error": str(e)}), 500
     finally:
         release_db_connection(conn)
+
+from flask import request, jsonify
+
+@rl_bp.route('/phonetics', methods=['POST'])
+def get_dynamic_phonetics():
+    data = request.get_json()
+    target_word = data.get('word')
+    
+    if not target_word:
+        return jsonify({"error": "No word provided"}), 400
+        
+    breakdown = get_or_create_phonetic_data(target_word)
+    
+    if breakdown:
+        return jsonify(breakdown), 200
+    else:
+        return jsonify({"error": "Failed to generate phonetics"}), 500
         
 @rl_bp.route('/test-db')
 def test_db():

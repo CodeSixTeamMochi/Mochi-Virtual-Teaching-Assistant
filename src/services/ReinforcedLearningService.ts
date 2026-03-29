@@ -77,3 +77,19 @@ export const logSpeechAssessment = async (studentId: string | number, score: num
         throw error;
     }
 };
+
+export const fetchDynamicPhonetics = async (word: string) => {
+    try {
+        const response = await fetch('http://localhost:5000/api/phonetics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ word: word.toLowerCase() })
+        });
+
+        if (!response.ok) return null;
+        return await response.json();
+    } catch (error) {
+        console.error("Failed to fetch dynamic phonetics:", error);
+        return null;
+    }
+};
