@@ -8,7 +8,8 @@ export interface EmergencyContact {
 
 export interface MedicationReminder {
   id: string;
-  studentName: string;
+  studentId: string | number; 
+  studentName: string;        
   medicationName: string;
   dosage: string;
   time: string;
@@ -36,6 +37,7 @@ export const emergencyContacts: EmergencyContact[] = [
 export const medicationReminders: MedicationReminder[] = [
   {
     id: "med-1",
+    studentId: "1",           
     studentName: "Movindu Gamage",
     medicationName: "Cetirizine",
     dosage: "5mg",
@@ -45,6 +47,7 @@ export const medicationReminders: MedicationReminder[] = [
   },
   {
     id: "med-2",
+    studentId: "3",           
     studentName: "Kavith Fernando",
     medicationName: "Ventolin Inhaler",
     dosage: "2 puffs",
@@ -88,7 +91,6 @@ export const students: Student[] = [
     allergies: ["Shellfish", "Eggs"],
     medicines: [],
   },
-
   {
     id: "5",
     name: "Anul Sandes",
@@ -97,7 +99,6 @@ export const students: Student[] = [
     allergies: ["Pollen"],
     medicines: ["Flonase Nasal Spray"],
   },
-
   {
     id: "6",
     name: "Thewan Jayaweera",

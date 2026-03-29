@@ -115,32 +115,33 @@ const HealthData = () => {
   }, [medications]);
 
   // Student handlers (DATABASE)
-const handleAddStudent = async (newStudent: Student) => {
-  try {
-    await studentsAPI.addHealthRecord({
-      id: newStudent.id,
-      allergies: Array.isArray(newStudent.allergies) 
-        ? newStudent.allergies.join(', ') 
-        : newStudent.allergies,
-      medicines: Array.isArray(newStudent.medicines) 
-        ? newStudent.medicines.join(', ') 
-        : newStudent.medicines,
-    });
-    
-    // Refresh the list from database
-    const data = await studentsAPI.getHealthRecords();
-    setStudents(data);
-  } catch (err) {
-    console.error("Error adding student health record:", err);
-    alert("Failed to add student health record. Please try again.");
-  }
-};
+  const handleAddStudent = async (newStudent: Student) => {
+    try {
+      await studentsAPI.addHealthRecord({
+        id: newStudent.id,
+        allergies: Array.isArray(newStudent.allergies) 
+          ? newStudent.allergies.join(', ') 
+          : newStudent.allergies,
+        medicines: Array.isArray(newStudent.medicines) 
+          ? newStudent.medicines.join(', ') 
+          : newStudent.medicines,
+      });
+      
+      // Refresh the list from database
+      const data = await studentsAPI.getHealthRecords();
+      setStudents(data);
+    } catch (err) {
+      console.error("Error adding student health record:", err);
+      alert("Failed to add student health record. Please try again.");
+    }
+  };
 
   // Medication handlers (DATABASE)
   const handleAddMedication = async (newMedication: MedicationReminder) => {
     try {
+      
       const added = await medicationsAPI.add({
-        studentName: newMedication.studentName,
+        studentId: newMedication.studentId,
         medicationName: newMedication.medicationName,
         dosage: newMedication.dosage,
         time: newMedication.time,
@@ -161,24 +162,25 @@ const handleAddStudent = async (newStudent: Student) => {
     setMedications((prev) => prev.filter((m) => m.id !== medicationId));
   };
 
+  // FIX 4: This is the single place the API call happens for status updates.
+  // MedicationReminders.tsx no longer calls the API directly.
   const handleUpdateMedicationStatus = async (
     medicationId: string,
     status: "pending" | "seen" | "completed"
   ) => {
     try {
-      await medicationsAPI.updateStatus(medicationId, status);
+      const response = await medicationsAPI.updateStatus(medicationId, status);
       
+      // Update local state with timestamps from backend
       setMedications((prev) =>
         prev.map((m) => {
           if (m.id === medicationId) {
-            const updated = { ...m, status };
-            if (status === "seen" && !m.seenAt) {
-              updated.seenAt = new Date().toISOString();
-            }
-            if (status === "completed" && !m.completedAt) {
-              updated.completedAt = new Date().toISOString();
-            }
-            return updated;
+            return {
+              ...m,
+              status: status,
+              seenAt: response.seenAt || m.seenAt,
+              completedAt: response.completedAt || m.completedAt,
+            };
           }
           return m;
         })
